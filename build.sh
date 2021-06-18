@@ -1,0 +1,1 @@
+gcc -I/usr/include/libxml2 -Wdiscarded-qualifiers -g client/* utils/* -lcypher-parser -lxml2 -lm -o main
