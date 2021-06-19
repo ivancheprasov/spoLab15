@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <malloc.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include "server.h"
 
 server_info *startup(uint16_t port) {
@@ -24,6 +26,31 @@ server_info *startup(uint16_t port) {
     listen(created_socket, 1);
 //    pthread_create(&server_info_ptr->manager_t_id, NULL, (void *(*)(void *)) manage_connections, server_info_ptr);
     return server_info_ptr;
+}
+
+char *receive_message(char *client_message_part, int32_t accepted_socket) {
+    long content_length = strtol(client_message_part, NULL, 10);
+
+    if (content_length <= 0) {
+        write(accepted_socket, "Bad request!", 12);
+        return NULL;
+    }
+
+    printf("Content length: %lu bytes\n", content_length);
+
+    char *request_xml = malloc(content_length);
+    bzero(request_xml, content_length);
+
+    long remain_data = content_length;
+    while (remain_data > 0) {
+        bzero(client_message_part, BUFSIZ);
+        long len = recv(accepted_socket, client_message_part, BUFSIZ, 0);
+        strcat(request_xml, client_message_part);
+        remain_data -= len;
+        printf("⬇ Received %ld bytes of request... Remaining: %ld\n", len, remain_data);
+    }
+    puts(request_xml);
+    return request_xml;
 }
 
 void close_server(server_info *info) {

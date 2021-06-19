@@ -29,11 +29,17 @@ typedef struct query_info query_info;
 
 typedef struct property property;
 
-char *build_client_xml_request(query_info *queryInfo);
+char *build_client_xml_request(query_info *info);
+
+query_info *parse_client_xml_request(char *xml_request);
 
 query_info *init_query_info();
 
 void free_query_info(query_info * info);
+
+static void *parse_xml_node_labels(xmlNode *node_labels, linked_list *labels);
+
+static void *parse_xml_node_props(xmlNode *node_props, linked_list *props);
 
 static void build_xml_node_labels(xmlNodePtr labels, linked_list *labels_list);
 

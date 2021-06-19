@@ -2,58 +2,34 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <cypher-parser.h>
 #include "client.h"
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        puts("No required arguments provided: <server_port>");
-        return -1;
-    }
-    uint16_t port = strtoul(argv[1], NULL, BASE_10);
-    int32_t server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in server_address;
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);
-    server_address.sin_addr.s_addr = inet_addr(HOSTNAME);
+void send_message(int32_t server_fd, char* request) {
+    char *request_header = malloc(BUFSIZ);
+    bzero(request_header, BUFSIZ);
+    sprintf(request_header, "%lu", strlen(request));
+    if (send(server_fd, request_header, BUFSIZ, 0) < 0) handle_sending_error();
+    free(request_header);
+    long remain_data = (long) strlen(request);
+    int offset = 0;
+    do {
+        int packet_size = remain_data > BUFSIZ ? BUFSIZ : (int) remain_data;
+        char *data = malloc(packet_size);
+        memcpy(data, request + offset, packet_size);
+        offset += packet_size;
 
-    int connection = connect(server_fd, (const struct sockaddr *) &server_address, sizeof(server_address));
-    if (connection == -1) {
-        puts("There was an error making a connection to the remote socket");
-        return -1;
-    }
-    char *input = NULL;
-    size_t length;
-    uint8_t errors;
-    puts("Enter CYPHER query or type \"exit\" to leave");
-    long count = server_fd;
-    while (count > 0) {
-        getline(&input, &length, stdin);
-        cypher_parse_result_t *result = cypher_parse(
-                input, NULL, NULL, CYPHER_PARSE_ONLY_STATEMENTS);
-        if (result == NULL) {
-            perror("cypher_parse");
-            return EXIT_FAILURE;
-        }
-        cypher_parse_result_fprint_ast(result, stdout, 100, NULL, 0);
-        errors = cypher_parse_result_nerrors(result);
-        if (errors > 0) {
-            puts("Unknown command");
-            cypher_parse_result_free(result);
-            continue;
-        }
-        query_info *info = get_query_info(result);
-        char *request = build_client_xml_request(info);
-        puts(request);
-        free_query_info(info);
-        cypher_parse_result_free(result);
-    }
+        if (send(server_fd, data, packet_size, 0) < 0) handle_sending_error();
+        free(data);
+
+        remain_data -= packet_size;
+        printf("⬆ Sent %d bytes of request... Remaining: %lu\n", packet_size, remain_data);
+
+    } while (remain_data > 0);
 }
 
-static query_info *get_query_info(cypher_parse_result_t *parsing_result) {
+query_info *get_query_info(cypher_parse_result_t *parsing_result) {
     query_info *query_info = init_query_info();
     const cypher_astnode_t *ast = cypher_parse_result_get_directive(parsing_result, 0);
     const cypher_astnode_t *query = cypher_ast_statement_get_body(ast);
@@ -178,8 +154,14 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
                        PROPERTY_KEY_SIZE);
             } else {
                 strcpy(prop->key, cypher_ast_prop_name_get_value(prop_name));
+                strcpy(prop->value, "");
                 add_last(info->changed_props, prop);
             }
         }
     }
+}
+
+static void handle_sending_error() {
+    puts("Sending error occurred");
+    exit(1);
 }
