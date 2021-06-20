@@ -8,9 +8,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <unistd.h>
 #include "../utils/const.h"
 #include "server.h"
-#include "../utils/message.h"
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -35,6 +35,17 @@ int main(int argc, char **argv) {
         char *request_xml = receive_message(client_message_part, accepted_socket);
         if (request_xml == NULL) continue;
         query_info *info = parse_client_xml_request(request_xml);
+        char *response_xml = execute_command(info);
+        puts(response_xml);
+        free(request_xml);
+        char *response_header = malloc(BUFSIZ);
+        bzero(response_header, BUFSIZ);
+        sprintf(response_header, "%lu", strlen(response_xml));
+        if (write(accepted_socket, response_header, BUFSIZ) < 0) break;
+        free(response_header);
+        send_message(accepted_socket, response_xml);
+        free(response_xml);
+        bzero(client_message_part, BUFSIZ);
     }
     close_server(info_ptr);
     free(info_ptr);

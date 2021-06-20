@@ -14,7 +14,7 @@ void send_message(int32_t server_fd, char* request);
 
 query_info *get_query_info(cypher_parse_result_t *query);
 
-static void parse_response(char *response);
+char* receive_message(int32_t server_fd, long content_length);
 
 static void set_labels_and_props(const cypher_astnode_t *node, linked_list *labels, linked_list *properties);
 

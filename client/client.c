@@ -29,6 +29,24 @@ void send_message(int32_t server_fd, char* request) {
     } while (remain_data > 0);
 }
 
+char* receive_message(int32_t server_fd, long content_length) {
+    char *response = malloc(BUFSIZ);
+    char *response_xml = malloc(content_length + 1);
+    bzero(response_xml, content_length + 1);
+    long response_offset = 0;
+    long remain_data = content_length;
+    while (remain_data > 0) {
+        bzero(response, BUFSIZ);
+        long receive_len = recv(server_fd, response, BUFSIZ, 0);
+        memcpy(response_xml + response_offset, response, receive_len);
+        remain_data -= receive_len;
+        response_offset += receive_len;
+        printf("⬇ Received %ld bytes of response... Remaining: %ld\n", receive_len, remain_data);
+    }
+    memcpy(response_xml + response_offset, "\0", 1);
+    return response_xml;
+}
+
 query_info *get_query_info(cypher_parse_result_t *parsing_result) {
     query_info *query_info = init_query_info();
     const cypher_astnode_t *ast = cypher_parse_result_get_directive(parsing_result, 0);

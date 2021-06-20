@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
     uint8_t errors;
     puts("Enter CYPHER query or type \"exit\" to leave");
     long count = server_fd;
+    char *response = malloc(BUFSIZ);
+    char response_string [BUFSIZ];
     while (count > 0) {
         getline(&input, &length, stdin);
         cypher_parse_result_t *result = cypher_parse(
@@ -47,6 +49,14 @@ int main(int argc, char **argv) {
         char *request = build_client_xml_request(info);
         puts(request);
         send_message(server_fd, request);
+        bzero(response, BUFSIZ);
+        count = recv(server_fd, response, BUFSIZ, 0);
+        long content_length = strtol(response, NULL, 10);
+        char *response_xml = receive_message(server_fd, content_length);
+        puts(response_xml);
+        bzero(response_string, sizeof(response_string));
+        parse_xml_response(response_xml, response_string);
+        puts(response_string);
         free_query_info(info);
         cypher_parse_result_free(result);
     }
