@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "../utils/const.h"
 #include "server.h"
-#include "datafile/datafile.h"
+#include "../datafile/datafile.h"
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     FILE* data_file = open_data_file(argv[2]);
+    fclose(data_file);
     uint16_t port = strtoul(argv[1], NULL, BASE_10);
     server_info *info_ptr = startup(port);
 

@@ -55,7 +55,11 @@ typedef struct {
 typedef struct {
     block_metadata metadata;
     int32_t first_empty_block;
-    char reserved[22];
+    int32_t fragmented_label_block;
+    int32_t fragmented_attribute_block;
+    int32_t fragmented_relation_block;
+    int32_t fragmented_string_block;
+    char reserved[6];
     node nodes[NODES_IN_BLOCK];
 } node_block;
 
