@@ -1,7 +1,7 @@
 #ifndef SPOLAB15_CELLS_H
 #define SPOLAB15_CELLS_H
 
-#include <stdint-gcc.h>
+#include <stdint.h>
 
 #pragma pack(push, 1)
 
@@ -11,38 +11,33 @@ typedef struct {
 } str;
 
 typedef struct {
-    int16_t offset;
     int32_t block_num;
-} str_ptr;//6 bytes
+    int16_t offset;
+} cell_ptr;//6 bytes
 
 typedef struct {
-    str_ptr name;
-} label;//6 bytes
+    cell_ptr prev;
+    cell_ptr name;
+} label_cell;//12 bytes
 
 typedef struct {
-    str_ptr key;
-    str_ptr value;
-} attribute;//12 bytes
+    cell_ptr prev;
+    cell_ptr key;
+    cell_ptr value;
+} attribute_cell;//18 bytes
 
 typedef struct {
-    str_ptr name;
+    cell_ptr prev;
+    cell_ptr name;
     int32_t node_b_block;
     int8_t node_b_offset;
-} relation;//11 bytes
+} relation_cell;//17 bytes
 
 typedef struct {
-    int32_t block_num;
-    int8_t offset;
-} pack_ptr;//5 bytes
-
-typedef struct {
-    pack_ptr first_label;
-    pack_ptr first_attribute;
-    pack_ptr first_relation;
-    pack_ptr empty_label;
-    pack_ptr empty_attribute;
-    pack_ptr empty_relation;
-} node;
+    cell_ptr last_label;
+    cell_ptr last_attribute;
+    cell_ptr last_relation;
+} node_cell; //18 bytes
 
 #pragma pack(pop)
 

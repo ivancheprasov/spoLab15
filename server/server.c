@@ -60,31 +60,32 @@ void send_message(int32_t client_socket, char *message) {
     } while (remain_data > 0);
 }
 
-char *execute_command(query_info *info) {
+char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
     uint16_t number = 0;
+    control_block *ctrl_block = data->ctrl_block;
     if (strcmp(command, "match") == 0) {
         //toDo возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
         linked_list *match_results = init_list();
         match_result *match = init_match_result();
         add_last(match->labels, "PERSON");
         add_last(match->labels, "SWEDISH");
-        property *prop = malloc(sizeof (property));
-        bzero(prop->key, sizeof (prop->key));
-        bzero(prop->value, sizeof (prop->value));
+        property *prop = malloc(sizeof(property));
+        bzero(prop->key, sizeof(prop->key));
+        bzero(prop->value, sizeof(prop->value));
         strcpy(prop->key, "age");
         strcpy(prop->value, "5");
         add_last(match->props, prop);
         add_last(match_results, match);
         match_result *match2 = init_match_result();
-        property *prop2 = malloc(sizeof (property));
-        bzero(prop2->key, sizeof (prop2->key));
-        bzero(prop2->value, sizeof (prop2->value));
+        property *prop2 = malloc(sizeof(property));
+        bzero(prop2->key, sizeof(prop2->key));
+        bzero(prop2->value, sizeof(prop2->value));
         strcpy(prop2->key, "name");
         strcpy(prop2->value, "IVAN");
-        property *prop3 = malloc(sizeof (property));
-        bzero(prop3->key, sizeof (prop3->key));
-        bzero(prop3->value, sizeof (prop3->value));
+        property *prop3 = malloc(sizeof(property));
+        bzero(prop3->key, sizeof(prop3->key));
+        bzero(prop3->value, sizeof(prop3->value));
         strcpy(prop3->key, "age");
         strcpy(prop3->value, "20");
         add_last(match2->props, prop2);
@@ -110,6 +111,17 @@ char *execute_command(query_info *info) {
             //создание узла*
             //привязка паков к узлу (номер пака и блока)
             //*создание новых блоков в случае заполнения и обновление управляющей структуры
+            cell_ptr *node_cell = create_node_cell(data);
+            if (info->labels->size > 0) {
+                for (node *label = info->labels->first; label; label = label->next) {
+                    cell_ptr *string_cell = create_string_cell(data, label->value);
+                    cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
+                    update_node_labels(data, node_cell, label_cell);
+                }
+            }
+//            if(info->props->size > 0) {
+//                attribute_block *attr_bl = (attribute_block *) get_block(data);
+//            }
             return build_xml_create_or_delete_response("create", "node", number);
         }
     }
@@ -124,18 +136,18 @@ char *execute_command(query_info *info) {
     }
     if (strcmp(command, "set") == 0) {
         //toDo сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
-        if(info->changed_labels->size > 0) {
+        if (info->changed_labels->size > 0) {
             return build_xml_set_or_remove_response("set", "labels", info->changed_labels, number);
-        } else if(info->changed_props->size > 0) {
+        } else if (info->changed_props->size > 0) {
             return build_xml_set_or_remove_response("set", "props", info->changed_props, number);
         }
         return NULL;
     }
     if (strcmp(command, "remove") == 0) {
         //toDo сравнение с заданным шаблоном, удаление changed, подсчёт кол-ва изменений
-        if(info->changed_labels->size > 0) {
+        if (info->changed_labels->size > 0) {
             return build_xml_set_or_remove_response("remove", "labels", info->changed_labels, number);
-        } else if(info->changed_props->size > 0) {
+        } else if (info->changed_props->size > 0) {
             return build_xml_set_or_remove_response("remove", "props", info->changed_props, number);
         }
         return NULL;

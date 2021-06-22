@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "../utils/message.h"
+#include "../datafile/datafile.h"
 
 struct server_info {
     uint16_t port;
@@ -19,7 +20,7 @@ void send_message(int32_t client_socket, char *message);
 
 void close_server(server_info *info);
 
-char *execute_command(query_info *info);
+char *execute_command(query_info *info, datafile *data);
 
 static server_info *create_server_info(uint16_t port);
 

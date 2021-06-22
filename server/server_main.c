@@ -14,8 +14,7 @@ int main(int argc, char **argv) {
         puts("No required arguments provided: <server_port> <data_file>");
         return -1;
     }
-    FILE* data_file = open_data_file(argv[2]);
-    fclose(data_file);
+    datafile *data = init_data(argv[2]);
     uint16_t port = strtoul(argv[1], NULL, BASE_10);
     server_info *info_ptr = startup(port);
 
@@ -33,7 +32,7 @@ int main(int argc, char **argv) {
         char *request_xml = receive_message(client_message_part, accepted_socket);
         if (request_xml == NULL) continue;
         query_info *info = parse_client_xml_request(request_xml);
-        char *response_xml = execute_command(info);
+        char *response_xml = execute_command(info, data);
         puts(response_xml);
         free(request_xml);
         char *response_header = malloc(BUFSIZ);
@@ -46,5 +45,6 @@ int main(int argc, char **argv) {
         bzero(client_message_part, BUFSIZ);
     }
     close_server(info_ptr);
+    fclose(data->file);
     free(info_ptr);
 }
