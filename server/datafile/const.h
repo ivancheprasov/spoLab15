@@ -1,0 +1,4 @@
+#ifndef SPOLAB15_CONST_H
+#define SPOLAB15_CONST_H
+#define BLOCK_SIZE 1024
+#endif //SPOLAB15_CONST_H

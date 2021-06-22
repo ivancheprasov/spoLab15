@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 14.06.2021.
-//
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stddef.h>
@@ -131,7 +127,7 @@ char *execute_command(query_info *info) {
         } else if(info->changed_props->size > 0) {
             return build_xml_set_or_remove_response("remove", "props", info->changed_props, number);
         }
-        return "match";
+        return NULL;
     }
     return NULL;
 }

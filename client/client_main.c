@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 19.06.2021.
-//
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "client.h"

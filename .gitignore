@@ -1,2 +1,5 @@
 # Project exclude paths
 /cmake-build-debug/
+client_main
+server_main
+.idea/

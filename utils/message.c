@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 17.06.2021.
-//
-
 #include <string.h>
 #include "message.h"
 

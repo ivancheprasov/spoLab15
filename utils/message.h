@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 17.06.2021.
-//
-
 #ifndef SPOLAB15_MESSAGE_H
 #define SPOLAB15_MESSAGE_H
 #include "const.h"

@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 14.06.2021.
-//
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,14 +7,15 @@
 #include <unistd.h>
 #include "../utils/const.h"
 #include "server.h"
+#include "datafile/datafile.h"
 
 int main(int argc, char **argv) {
     if (argc < 3) {
         puts("No required arguments provided: <server_port> <data_file>");
         return -1;
     }
+    FILE* data_file = open_data_file(argv[2]);
     uint16_t port = strtoul(argv[1], NULL, BASE_10);
-
     server_info *info_ptr = startup(port);
 
     if (info_ptr == NULL) {

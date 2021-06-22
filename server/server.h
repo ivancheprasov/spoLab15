@@ -1,7 +1,3 @@
-//
-// Created by subhuman on 14.06.2021.
-//
-
 #ifndef SPOLAB15_SERVER_H
 #define SPOLAB15_SERVER_H
 
@@ -26,5 +22,6 @@ void close_server(server_info *info);
 char *execute_command(query_info *info);
 
 static server_info *create_server_info(uint16_t port);
+
 
 #endif //SPOLAB15_SERVER_H
