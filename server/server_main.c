@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
         char *response_xml = execute_command(info, data);
         puts(response_xml);
         free(request_xml);
-        char *response_header = malloc(BUFSIZ);
+        char response_header[BUFSIZ];
         bzero(response_header, BUFSIZ);
         sprintf(response_header, "%lu", strlen(response_xml));
         if (write(accepted_socket, response_header, BUFSIZ) < 0) break;

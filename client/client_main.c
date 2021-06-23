@@ -34,7 +34,9 @@ int main(int argc, char **argv) {
             perror("cypher_parse");
             return EXIT_FAILURE;
         }
+        puts("");
         cypher_parse_result_fprint_ast(result, stdout, 100, NULL, 0);
+        puts("");
         errors = cypher_parse_result_nerrors(result);
         if (errors > 0) {
             puts("Unknown command");
@@ -53,6 +55,7 @@ int main(int argc, char **argv) {
         bzero(response_string, sizeof(response_string));
         parse_xml_response(response_xml, response_string);
         puts(response_string);
+        puts("");
         free_query_info(info);
         cypher_parse_result_free(result);
     }

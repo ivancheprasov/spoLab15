@@ -26,15 +26,17 @@ uint32_t add_first(linked_list *ptr, void *element);
 
 uint32_t add_last(linked_list *ptr, void *element);
 
-void *find_element(bool (*by)(void *, char *), linked_list *ptr, char*to_find);
+bool by_value(void *value, char *to_find, char *second_argument);
 
-bool by_value(void *value, char *to_find);
+bool by_key(void *value, char *key, char *second_value);
 
 linked_list *init_list();
 
 void free_list(linked_list *ptr);
 
-void remove_element(bool (*by)(void *, char *), linked_list *ptr, char *to_find);
+void remove_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find);
+
+void *find_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find);
 
 uint16_t get_last_n(linked_list *ptr, void **buffer, uint16_t buffer_size, bool(*filter)(void*, char*to_filter), char*to_filter);
 

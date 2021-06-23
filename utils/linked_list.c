@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdarg.h>
 #include "linked_list.h"
 
 void *get_element(linked_list *ptr, uint32_t index) {
@@ -58,9 +59,9 @@ void free_list(linked_list *ptr) {
     free(ptr);
 }
 
-void remove_element(bool (*by)(void *, char *), linked_list *ptr, char *to_find) {
+void remove_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find) {
     node *current = ptr->first;
-    while (current != NULL && !by(current->value, to_find)) {
+    while (current != NULL && !by(current->value, first_to_find, second_to_find)) {
         current = current->next;
     }
     if (current != NULL) {
@@ -81,20 +82,20 @@ void remove_element(bool (*by)(void *, char *), linked_list *ptr, char *to_find)
     }
 }
 
-void *find_element(bool (*by)(void *, char *), linked_list *ptr, char *to_find) {
+void *find_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find) {
     if (ptr->size == 0) {
         return NULL;
     }
     node *current = ptr->first;
-    while (current != NULL && !by(current->value, to_find)) {
+    while (current != NULL && !by(current->value, first_to_find, second_to_find)) {
         current = current->next;
     }
     if (current == NULL) return NULL;
     return current->value;
 }
 
-bool by_value(void *value, char *to_find) {
-    return strcmp(value, to_find) == 0;
+bool by_value(void *value, char *to_find, char *second_argument) {
+    return  strcmp(value, to_find) == 0;
 }
 
 uint16_t get_last_n(linked_list *ptr, void **buffer, uint16_t buffer_size, bool(*filter)(void *, char*to_filter), char*to_filter) {

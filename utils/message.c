@@ -185,7 +185,6 @@ char *build_xml_match_response(linked_list *match_results, uint16_t number) {
         xmlNodePtr node = xmlNewChild(response, NULL, BAD_CAST "node", NULL);
         xmlNodePtr labels = xmlNewChild(node, NULL, BAD_CAST "labels", NULL);
         xmlNodePtr props = xmlNewChild(node, NULL, BAD_CAST "props", NULL);
-        match_result *result1 = (match_result *) matching_node->value;
         build_xml_node_labels(labels, ((match_result *) matching_node->value)->labels);
         build_xml_node_props(props, ((match_result *) matching_node->value)->props);
     }
@@ -230,6 +229,14 @@ char *build_xml_set_or_remove_response(char *command_type, char *object_type, li
     return (char *) response_string;
 }
 
+bool by_property_values(void *value, char *to_find_key, char* to_find_value) {
+    return strcmp(((property *)value)->key, to_find_key) == 0 && strcmp(((property *)value)->value, to_find_value) == 0;
+}
+
+bool by_key(void *value, char *key, char *second_value) {
+    return strcmp(((property *)value)->key, key) == 0;
+}
+
 static void *parse_xml_node_labels(xmlNode *node_labels, linked_list *labels) {
     for (xmlNode *label = node_labels->children; label; label = label->next) {
         xmlChar *name = xmlGetProp(label, BAD_CAST "name");
@@ -245,6 +252,8 @@ static void *parse_xml_node_props(xmlNode *node_props, linked_list *props) {
         xmlChar *key = xmlGetProp(prop, BAD_CAST "key");
         xmlChar *value = xmlGetProp(prop, BAD_CAST "value");
         if (key == NULL || value == NULL) return NULL;
+        bzero(current_prop->key, strlen((current_prop->key)));
+        bzero(current_prop->value, strlen((current_prop->value)));
         strcpy(current_prop->key, (char *) key);
         strcpy(current_prop->value, (char *) value);
         add_last(props, current_prop);

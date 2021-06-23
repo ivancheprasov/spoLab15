@@ -24,7 +24,7 @@ void send_message(int32_t server_fd, char* request) {
         free(data);
 
         remain_data -= packet_size;
-        printf("⬆ Sent %d bytes of request... Remaining: %lu\n", packet_size, remain_data);
+        printf("⬆ Sent %d bytes of request... Remaining: %lu\n\n", packet_size, remain_data);
 
     } while (remain_data > 0);
 }
@@ -41,7 +41,7 @@ char* receive_message(int32_t server_fd, long content_length) {
         memcpy(response_xml + response_offset, response, receive_len);
         remain_data -= receive_len;
         response_offset += receive_len;
-        printf("⬇ Received %ld bytes of response... Remaining: %ld\n", receive_len, remain_data);
+        printf("⬇ Received %ld bytes of response... Remaining: %ld\n\n", receive_len, remain_data);
     }
     memcpy(response_xml + response_offset, "\0", 1);
     return response_xml;
@@ -114,7 +114,7 @@ static void set_labels_and_props(const cypher_astnode_t *node, linked_list *labe
                     cypher_astnode_type(value) != CYPHER_AST_STRING ||
                     strlen(cypher_ast_string_get_value(value)) > PROPERTY_VALUE_SIZE
                     ) {
-                printf("Invalid Property. Max key size = %d. Max value size = %d. Only string properties allowed.",
+                printf("Invalid Property. Max key size = %d. Max value size = %d. Only string properties allowed.\n",
                        PROPERTY_KEY_SIZE, PROPERTY_VALUE_SIZE);
             } else {
                 strcpy(prop->key, cypher_ast_prop_name_get_value(key));
@@ -145,7 +145,7 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
                     cypher_astnode_type(expression) != CYPHER_AST_STRING ||
                     strlen(cypher_ast_string_get_value(expression)) > PROPERTY_VALUE_SIZE
                     ) {
-                printf("Invalid Property. Only string properties allowed.");
+                printf("Invalid Property. Only string properties allowed.\n");
             } else {
                 strcpy(prop->key, cypher_ast_prop_name_get_value(prop_name));
                 strcpy(prop->value, cypher_ast_string_get_value(expression));
@@ -168,7 +168,7 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
             if (
                     strlen(cypher_ast_prop_name_get_value(prop_name)) >
                     PROPERTY_KEY_SIZE) {
-                printf("Invalid Property. Max key size = %d",
+                printf("Invalid Property. Max key size = %d\n",
                        PROPERTY_KEY_SIZE);
             } else {
                 strcpy(prop->key, cypher_ast_prop_name_get_value(prop_name));

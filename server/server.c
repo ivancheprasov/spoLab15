@@ -39,7 +39,7 @@ char *receive_message(char *client_message_part, int32_t accepted_socket) {
         long len = recv(accepted_socket, client_message_part, BUFSIZ, 0);
         strcat(request_xml, client_message_part);
         remain_data -= len;
-        printf("⬇ Received %ld bytes of request... Remaining: %ld\n", len, remain_data);
+        printf("⬇ Received %ld bytes of request... Remaining: %ld\n\n", len, remain_data);
     }
     puts(request_xml);
     return request_xml;
@@ -50,13 +50,13 @@ void send_message(int32_t client_socket, char *message) {
     int offset = 0;
     do {
         int packet_size = remain_data > BUFSIZ ? BUFSIZ : (int) remain_data;
-        char data [packet_size];
+        char data[packet_size];
         bzero(data, packet_size);
         memcpy(data, message + offset, packet_size);
         offset += packet_size;
         if (write(client_socket, data, packet_size) < 0) break;
         remain_data -= packet_size;
-        printf("⬆ Sent %d bytes of response... Remaining: %lu\n", packet_size, remain_data);
+        printf("⬆ Sent %d bytes of response... Remaining: %lu\n\n", packet_size, remain_data);
     } while (remain_data > 0);
 }
 
@@ -78,12 +78,16 @@ char *execute_command(query_info *info, datafile *data) {
             number = 1;
             //toDo создание узла с заданными параметрами
             cell_ptr *node_cell = create_node_cell(data);
-            if (info->labels->size > 0) {
-                for (node *label = info->labels->first; label; label = label->next) {
-                    cell_ptr *string_cell = create_string_cell(data, label->value);
-                    cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
-                    update_node_labels(data, node_cell, label_cell);
-                }
+            for (node *label = info->labels->first; label; label = label->next) {
+                cell_ptr *string_cell = create_string_cell(data, label->value);
+                cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
+                update_node_labels(data, node_cell, label_cell);
+            }
+            for (node *prop = info->props->first; prop; prop = prop->next) {
+                cell_ptr *key_cell = create_string_cell(data, ((property *)prop->value)->key);
+                cell_ptr *value_cell = create_string_cell(data, ((property *)prop->value)->value);
+                cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
+                update_node_attributes(data, node_cell, attribute_cell);
             }
             return build_xml_create_or_delete_response("create", "node", number);
         }
@@ -109,6 +113,7 @@ char *execute_command(query_info *info, datafile *data) {
             set_new_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("set", "labels", info->changed_labels, number);
         } else if (info->changed_props->size > 0) {
+            set_new_attributes(data, node_ptr, info->changed_props);
             return build_xml_set_or_remove_response("set", "props", info->changed_props, number);
         }
         return NULL;
@@ -121,6 +126,7 @@ char *execute_command(query_info *info, datafile *data) {
             number = remove_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("remove", "labels", info->changed_labels, number);
         } else if (info->changed_props->size > 0) {
+            number = remove_attributes(data, node_ptr, info->changed_props);
             return build_xml_set_or_remove_response("remove", "props", info->changed_props, number);
         }
         return NULL;
