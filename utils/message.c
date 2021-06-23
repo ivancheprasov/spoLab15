@@ -185,6 +185,7 @@ char *build_xml_match_response(linked_list *match_results, uint16_t number) {
         xmlNodePtr node = xmlNewChild(response, NULL, BAD_CAST "node", NULL);
         xmlNodePtr labels = xmlNewChild(node, NULL, BAD_CAST "labels", NULL);
         xmlNodePtr props = xmlNewChild(node, NULL, BAD_CAST "props", NULL);
+        match_result *result1 = (match_result *) matching_node->value;
         build_xml_node_labels(labels, ((match_result *) matching_node->value)->labels);
         build_xml_node_props(props, ((match_result *) matching_node->value)->props);
     }

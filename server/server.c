@@ -63,34 +63,11 @@ void send_message(int32_t client_socket, char *message) {
 char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
     uint16_t number = 0;
-    control_block *ctrl_block = data->ctrl_block;
     if (strcmp(command, "match") == 0) {
         //toDo возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
         linked_list *match_results = init_list();
-        match_result *match = init_match_result();
-        add_last(match->labels, "PERSON");
-        add_last(match->labels, "SWEDISH");
-        property *prop = malloc(sizeof(property));
-        bzero(prop->key, sizeof(prop->key));
-        bzero(prop->value, sizeof(prop->value));
-        strcpy(prop->key, "age");
-        strcpy(prop->value, "5");
-        add_last(match->props, prop);
-        add_last(match_results, match);
-        match_result *match2 = init_match_result();
-        property *prop2 = malloc(sizeof(property));
-        bzero(prop2->key, sizeof(prop2->key));
-        bzero(prop2->value, sizeof(prop2->value));
-        strcpy(prop2->key, "name");
-        strcpy(prop2->value, "IVAN");
-        property *prop3 = malloc(sizeof(property));
-        bzero(prop3->key, sizeof(prop3->key));
-        bzero(prop3->value, sizeof(prop3->value));
-        strcpy(prop3->key, "age");
-        strcpy(prop3->value, "20");
-        add_last(match2->props, prop2);
-        add_last(match2->props, prop3);
-        add_last(match_results, match2);
+        linked_list *node_ptr = init_list();
+        number = match(info, data, node_ptr, match_results);
         return build_xml_match_response(match_results, number);
     }
     if (strcmp(command, "create") == 0) {
@@ -119,9 +96,6 @@ char *execute_command(query_info *info, datafile *data) {
                     update_node_labels(data, node_cell, label_cell);
                 }
             }
-//            if(info->props->size > 0) {
-//                attribute_block *attr_bl = (attribute_block *) get_block(data);
-//            }
             return build_xml_create_or_delete_response("create", "node", number);
         }
     }
@@ -136,6 +110,9 @@ char *execute_command(query_info *info, datafile *data) {
     }
     if (strcmp(command, "set") == 0) {
         //toDo сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
+        linked_list *node_ptr = init_list();
+        number = match(info, data, node_ptr, NULL);
+        update_labels(data, node_ptr, info->changed_labels);
         if (info->changed_labels->size > 0) {
             return build_xml_set_or_remove_response("set", "labels", info->changed_labels, number);
         } else if (info->changed_props->size > 0) {

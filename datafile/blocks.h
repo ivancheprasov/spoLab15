@@ -60,7 +60,7 @@ typedef struct {
 typedef struct {
     block_metadata metadata;
     int32_t next_block;
-    char reserved[8];
+    char reserved[9];
     node_cell nodes[NODES_IN_BLOCK];
 } node_block;
 
@@ -78,7 +78,7 @@ typedef struct {
     int16_t empty_relation_node;
     int32_t fragmented_string_block;
     int16_t empty_string_offset;
-    char reserved[10];
+    char reserved[13];
     node_cell nodes[NODES_IN_CONTROL_BLOCK];
 } control_block;
 

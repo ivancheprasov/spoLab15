@@ -28,6 +28,8 @@ uint32_t add_last(linked_list *ptr, void *element);
 
 void *find_element(bool (*by)(void *, char *), linked_list *ptr, char*to_find);
 
+bool by_value(void *value, char *to_find);
+
 linked_list *init_list();
 
 void free_list(linked_list *ptr);

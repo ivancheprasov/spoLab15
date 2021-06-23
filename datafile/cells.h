@@ -34,10 +34,11 @@ typedef struct {
 } relation_cell;//17 bytes
 
 typedef struct {
+    char is_empty;
     cell_ptr last_label;
     cell_ptr last_attribute;
     cell_ptr last_relation;
-} node_cell; //18 bytes
+} node_cell; //19 bytes
 
 #pragma pack(pop)
 

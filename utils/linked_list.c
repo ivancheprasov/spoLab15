@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <malloc.h>
+#include <string.h>
 #include "linked_list.h"
 
 void *get_element(linked_list *ptr, uint32_t index) {
@@ -24,6 +25,7 @@ uint32_t add_first(linked_list *ptr, void *element) {
 
 uint32_t add_last(linked_list *ptr, void *element) {
     node *created = malloc(sizeof(node));
+    bzero(created, sizeof(node));
     created->prev = ptr->last;
     created->value = element;
     if (ptr->last == NULL) {
@@ -89,6 +91,10 @@ void *find_element(bool (*by)(void *, char *), linked_list *ptr, char *to_find) 
     }
     if (current == NULL) return NULL;
     return current->value;
+}
+
+bool by_value(void *value, char *to_find) {
+    return strcmp(value, to_find) == 0;
 }
 
 uint16_t get_last_n(linked_list *ptr, void **buffer, uint16_t buffer_size, bool(*filter)(void *, char*to_filter), char*to_filter) {
