@@ -274,9 +274,24 @@ static bool match_labels(linked_list *matcher_labels, datafile *data, label_cell
     return labels->size == 0;
 }
 
-void update_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels) {
+void set_new_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels) {
     node *label;
     for (node *current_node = node_cells->first; current_node; current_node = current_node->next) {
+        cell_ptr *node_ptr = current_node->value;
+        for (label = changed_labels->first; label; label = label->next) {
+            cell_ptr *string_ptr = create_string_cell(data, label->value);
+            cell_ptr *label_ptr = create_label_cell(data, string_ptr, node_ptr);
+            update_node_labels(data, node_ptr, label_ptr);
+        }
+    }
+}
+
+long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels) {
+    long number = 0;
+    node *query_label;
+    label_block read_label;
+    for (node *current_node = node_cells->first; current_node; current_node = current_node->next) {
+        bool has_changed = false;
         block read_node = {0};
         cell_ptr *node_ptr = current_node->value;
         fill_block(data, node_ptr->block_num, &read_node);
@@ -286,12 +301,72 @@ void update_labels(datafile *data, linked_list *node_cells, linked_list *changed
         } else {
             memcpy(&node, &((node_block *) &read_node)->nodes[node_ptr->offset], sizeof(node_cell));
         }
-        for (label = changed_labels->first; label; label = label->next) {
-            cell_ptr *string_ptr = create_string_cell(data, label->value);
-            cell_ptr *label_ptr = create_label_cell(data, string_ptr, node_ptr);
-            update_node_labels(data, node_ptr, label_ptr);
+        linked_list *labels = init_list();
+        if (changed_labels != NULL) {
+            for (query_label = changed_labels->first; query_label; query_label = query_label->next) {
+                add_last(labels, query_label->value);
+            }
         }
+        int32_t block_number = node.last_label.block_num;
+        int16_t offset = node.last_label.offset;
+        cell_ptr *prev = node_ptr;
+        do {
+            bzero(&read_label, BLOCK_SIZE);
+            fill_block(data, block_number, &read_label);
+            if (read_label.metadata.type == CONTROL) break;
+            cell_ptr current = {0};
+            current.block_num = block_number;
+            current.offset = offset;
+            label_cell old_cell = {0};
+            label_cell new_cell = {0};
+            memcpy(&old_cell, &read_label.labels[offset], sizeof(label_cell));
+            cell_ptr string_ptr = old_cell.name;
+            str_block read_string = {0};
+            fill_block(data, string_ptr.block_num, &read_string);
+            int16_t size = 0;
+            memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
+            char *label_name = malloc(size + 1);
+            bzero(label_name, strlen(label_name) + 1);
+            strcpy(label_name, &read_string.data[string_ptr.offset + 2]);
+            label_name[size] = '\0';
+            if (changed_labels == NULL || find_element(by_value, labels, label_name) != NULL) {
+                remove_element(by_value, labels, label_name);
+                bzero(&new_cell, sizeof(label_cell));
+                block updated = {0};
+                fill_block(data, prev->block_num, &updated);
+                if (updated.metadata.type == CONTROL) {
+                    memcpy(&node.last_label, &old_cell.prev, sizeof(cell_ptr));
+                    memcpy(&((control_block *) &updated)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+                    update_data_block(data, node_ptr->block_num, &updated);
+                    fill_block(data, 0, data->ctrl_block);
+                } else if (updated.metadata.type == NODE) {
+                    memcpy(&node.last_label, &old_cell.prev, sizeof(cell_ptr));
+                    memcpy(&((node_block *) &updated)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+                    update_data_block(data, node_ptr->block_num, &updated);
+                } else {
+                    label_cell prev_label = ((label_block *) &updated)->labels[prev->offset];
+                    memcpy(&prev_label.prev, &old_cell.prev, sizeof(cell_ptr));
+                    memcpy(&((label_block *) &updated)->labels[prev->offset], &prev_label, sizeof(label_cell));
+                    update_data_block(data, prev->block_num, &updated);
+                }
+                bzero(&read_label, BLOCK_SIZE);
+                fill_block(data, block_number, &read_label);
+                memcpy(&new_cell.prev.block_num, &data->ctrl_block->fragmented_label_block, sizeof(int32_t));
+                memcpy(&new_cell.prev.offset, &data->ctrl_block->empty_label_number, sizeof(int16_t));
+                memcpy(&((label_block *) &read_label)->labels[offset], &new_cell, sizeof(label_cell));
+                update_data_block(data, block_number, &read_label);
+                memcpy(&data->ctrl_block->fragmented_label_block, &block_number, sizeof(int32_t));
+                memcpy(&data->ctrl_block->empty_label_number, &offset, sizeof(int16_t));
+                update_control_block(data);
+                if(!has_changed) number++;
+                has_changed = true;
+            }
+            memcpy(prev, &current, sizeof(cell_ptr));
+            block_number = old_cell.prev.block_num;
+            offset = old_cell.prev.offset;
+        } while (read_label.metadata.type != CONTROL);
     }
+    return number;
 }
 
 static void allocate_new_block(datafile *data, TYPE type) {

@@ -73,21 +73,10 @@ char *execute_command(query_info *info, datafile *data) {
     if (strcmp(command, "create") == 0) {
         if (info->has_relation) {
             //toDo сравнение с заданным шаблоном, создание указанной связи, подсчёт кол-ва созданных связей
-            //сравнение с шаблоном двух нод во вложенном цикле: нахождение первой->нахождение второй->создание связи
-            //если найдены, проверка на наличие блоков соотв. типов (поля fragmented_..._block) и их создание в случае отсутствия (обновление управляющей структуры)
-            //создание строки (отношения) и обновление упр. структуры блока
-            //привязка отношения к узлу1 (в блоке узлов) и узлу2 (в блоке отношения)
             return build_xml_create_or_delete_response("create", "relation", number);
         } else {
             number = 1;
             //toDo создание узла с заданными параметрами
-            //проверка на наличие блоков соотв. типов (поля fragmented_..._block) и их создание в случае отсутствия (обновление управляющей структуры)
-            //создание строк (указанных аттрибутов и меток), если указаны, и обновление упр. структуры блока*
-            //создание паков меток и аттрибутов, если указаны (может быть больше одного пака)*
-            //привязка указанных аттрибутов и меток (номер блока и смещение)
-            //создание узла*
-            //привязка паков к узлу (номер пака и блока)
-            //*создание новых блоков в случае заполнения и обновление управляющей структуры
             cell_ptr *node_cell = create_node_cell(data);
             if (info->labels->size > 0) {
                 for (node *label = info->labels->first; label; label = label->next) {
@@ -112,8 +101,8 @@ char *execute_command(query_info *info, datafile *data) {
         //toDo сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
         linked_list *node_ptr = init_list();
         number = match(info, data, node_ptr, NULL);
-        update_labels(data, node_ptr, info->changed_labels);
         if (info->changed_labels->size > 0) {
+            set_new_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("set", "labels", info->changed_labels, number);
         } else if (info->changed_props->size > 0) {
             return build_xml_set_or_remove_response("set", "props", info->changed_props, number);
@@ -122,7 +111,10 @@ char *execute_command(query_info *info, datafile *data) {
     }
     if (strcmp(command, "remove") == 0) {
         //toDo сравнение с заданным шаблоном, удаление changed, подсчёт кол-ва изменений
+        linked_list *node_ptr = init_list();
+        match(info, data, node_ptr, NULL);
         if (info->changed_labels->size > 0) {
+            number = remove_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("remove", "labels", info->changed_labels, number);
         } else if (info->changed_props->size > 0) {
             return build_xml_set_or_remove_response("remove", "props", info->changed_props, number);

@@ -29,7 +29,9 @@ void update_node_labels(datafile *data, cell_ptr *node_ptr, cell_ptr *label_ptr)
 
 long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list *nodes);
 
-void update_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels);
+void set_new_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels);
+
+long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels);
 
 static void update_control_block(datafile *data);
 
