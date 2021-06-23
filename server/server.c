@@ -50,11 +50,11 @@ void send_message(int32_t client_socket, char *message) {
     int offset = 0;
     do {
         int packet_size = remain_data > BUFSIZ ? BUFSIZ : (int) remain_data;
-        char *data = malloc(packet_size);
+        char data [packet_size];
+        bzero(data, packet_size);
         memcpy(data, message + offset, packet_size);
         offset += packet_size;
         if (write(client_socket, data, packet_size) < 0) break;
-        free(data);
         remain_data -= packet_size;
         printf("⬆ Sent %d bytes of response... Remaining: %lu\n", packet_size, remain_data);
     } while (remain_data > 0);
@@ -89,10 +89,14 @@ char *execute_command(query_info *info, datafile *data) {
         }
     }
     if (strcmp(command, "delete") == 0) {
+        linked_list *node_ptr = init_list();
+        number = match(info, data, node_ptr, NULL);
+
         if (info->has_relation) {
             //toDo сравнение с заданным шаблоном, удаление указанной связи, подсчёт кол-ва удалённых связей
             return build_xml_create_or_delete_response("delete", "relation", number);
         } else {
+            delete_nodes(data, node_ptr);
             //toDo сравнение с заданным шаблоном, удаление указанных узлов, подсчёт кол-ва удалённых узлов
             return build_xml_create_or_delete_response("delete", "node", number);
         }

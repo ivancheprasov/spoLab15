@@ -33,6 +33,8 @@ void set_new_labels(datafile *data, linked_list *node_cells, linked_list *change
 
 long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels);
 
+void delete_nodes(datafile *data, linked_list *node_cells);
+
 static void update_control_block(datafile *data);
 
 static bool match_labels(linked_list *matcher_labels, datafile *data, label_cell last_label, linked_list *node_labels);

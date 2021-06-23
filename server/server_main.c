@@ -39,7 +39,6 @@ int main(int argc, char **argv) {
         bzero(response_header, BUFSIZ);
         sprintf(response_header, "%lu", strlen(response_xml));
         if (write(accepted_socket, response_header, BUFSIZ) < 0) break;
-        free(response_header);
         send_message(accepted_socket, response_xml);
         free(response_xml);
         bzero(client_message_part, BUFSIZ);

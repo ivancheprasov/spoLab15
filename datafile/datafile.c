@@ -286,6 +286,34 @@ void set_new_labels(datafile *data, linked_list *node_cells, linked_list *change
     }
 }
 
+void delete_nodes(datafile *data, linked_list *node_cells) {
+    remove_labels(data, node_cells, NULL);
+    for (node *current_node = node_cells->first; current_node; current_node = current_node->next) {
+        block read_node = {0};
+        cell_ptr *node_ptr = current_node->value;
+        fill_block(data, node_ptr->block_num, &read_node);
+        node_cell node = {0};
+        if (read_node.metadata.type == CONTROL) {
+            memcpy(&node, &((control_block *) &read_node)->nodes[node_ptr->offset], sizeof(node_cell));
+            node.is_empty = 0;
+            memcpy(&node.last_label.block_num, &data->ctrl_block->fragmented_node_block, sizeof(int32_t));
+            memcpy(&node.last_label.offset, &data->ctrl_block->empty_node_number, sizeof(int16_t));
+            memcpy(&((control_block *) &read_node)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+        } else {
+            memcpy(&node, &((node_block *) &read_node)->nodes[node_ptr->offset], sizeof(node_cell));
+            node.is_empty = 0;
+            memcpy(&node.last_label.block_num, &data->ctrl_block->fragmented_node_block, sizeof(int32_t));
+            memcpy(&node.last_label.offset, &data->ctrl_block->empty_node_number, sizeof(int16_t));
+            memcpy(&((node_block *) &read_node)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+        }
+        update_data_block(data, node_ptr->block_num, &read_node);
+        fill_block(data, 0, data->ctrl_block);
+        memcpy(&data->ctrl_block->fragmented_node_block, &node_ptr->block_num, sizeof(int32_t));
+        memcpy(&data->ctrl_block->empty_node_number, &node_ptr->offset, sizeof(int16_t));
+        update_control_block(data);
+    }
+}
+
 long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed_labels) {
     long number = 0;
     node *query_label;
@@ -309,7 +337,8 @@ long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed
         }
         int32_t block_number = node.last_label.block_num;
         int16_t offset = node.last_label.offset;
-        cell_ptr *prev = node_ptr;
+        cell_ptr prev = {0};
+        memcpy(&prev, node_ptr, sizeof(cell_ptr));
         do {
             bzero(&read_label, BLOCK_SIZE);
             fill_block(data, block_number, &read_label);
@@ -358,10 +387,10 @@ long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed
                 memcpy(&data->ctrl_block->fragmented_label_block, &block_number, sizeof(int32_t));
                 memcpy(&data->ctrl_block->empty_label_number, &offset, sizeof(int16_t));
                 update_control_block(data);
-                if(!has_changed) number++;
+                if (!has_changed) number++;
                 has_changed = true;
             }
-            memcpy(prev, &current, sizeof(cell_ptr));
+            memcpy(&prev, &current, sizeof(cell_ptr));
             block_number = old_cell.prev.block_num;
             offset = old_cell.prev.offset;
         } while (read_label.metadata.type != CONTROL);
