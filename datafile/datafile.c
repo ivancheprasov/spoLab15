@@ -1,9 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
 #include "datafile.h"
-#include "../utils/message.h"
 
 datafile *init_data(char *file_path) {
     datafile *data = malloc(sizeof(datafile));
@@ -192,7 +190,15 @@ cell_ptr *create_string_cell(datafile *data, char *string) {
             memcpy(read.data + ptr->offset, &str_length, 2);
             strcpy(read.data + ptr->offset + 2, string);
         } else {
-            //todo create new block
+            int32_t new_block_number = data->ctrl_block->empty_block;
+            allocate_new_block(data, STRING);
+            data->ctrl_block->fragmented_string_block = new_block_number;
+            data->ctrl_block->empty_string_offset = str_length + 2;
+            ptr->offset = 0;
+            ptr->block_num = new_block_number;
+            fill_block(data, new_block_number, &read);
+            memcpy(read.data, &str_length, 2);
+            strcpy(read.data + 2, string);
         }
     } else {
         cell_ptr offset_ptr = {0};
@@ -205,9 +211,15 @@ cell_ptr *create_string_cell(datafile *data, char *string) {
             memcpy(&empty_fragment_size, read.data + offset_ptr.offset, sizeof(empty_fragment_size));
         } while (empty_fragment_size < str_length || offset_ptr.block_num != 0);
         if (offset_ptr.block_num == 0) {
-            //todo create new block
-        } else {
-            //todo write to block by offset ptr
+            int32_t new_block_number = data->ctrl_block->empty_block;
+            allocate_new_block(data, STRING);
+            data->ctrl_block->fragmented_string_block = new_block_number;
+            data->ctrl_block->empty_string_offset = str_length + 2;
+            ptr->offset = 0;
+            ptr->block_num = new_block_number;
+            fill_block(data, new_block_number, &read);
+            memcpy(read.data, &str_length, 2);
+            strcpy(read.data + 2, string);
         }
     }
     update_data_block(data, ptr->block_num, &read);
