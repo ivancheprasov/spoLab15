@@ -6,11 +6,6 @@
 #pragma pack(push, 1)
 
 typedef struct {
-    int16_t size;
-    char *value;
-} str;
-
-typedef struct {
     int32_t block_num;
     int16_t offset;
 } cell_ptr;//6 bytes

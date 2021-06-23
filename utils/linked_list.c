@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <malloc.h>
 #include <string.h>
-#include <stdarg.h>
 #include "linked_list.h"
 
 void *get_element(linked_list *ptr, uint32_t index) {

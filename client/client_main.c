@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
     char response_string [BUFSIZ];
     while (count > 0) {
         getline(&input, &length, stdin);
+        if(strcmp(input, "q\n") == 0) break;
         cypher_parse_result_t *result = cypher_parse(
                 input, NULL, NULL, CYPHER_PARSE_ONLY_STATEMENTS);
         if (result == NULL) {

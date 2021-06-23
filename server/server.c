@@ -5,9 +5,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "server.h"
 
-server_info *startup(uint16_t port) {
+server_info *startup(uint16_t port, datafile *data) {
     server_info *server_info_ptr = create_server_info(port);
     int created_socket = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in address;
@@ -15,12 +16,14 @@ server_info *startup(uint16_t port) {
     address.sin_port = htons(server_info_ptr->port);
     address.sin_family = AF_INET;
     server_info_ptr->server_fd = created_socket;
+    server_info_ptr->data = data;;
+    pthread_mutex_init(&server_info_ptr->mutex, NULL);
     int bind_result = bind(created_socket, (const struct sockaddr *) &address, sizeof(address));
     if (bind_result == -1) {
         return NULL;
     }
     listen(created_socket, 1);
-//    pthread_create(&server_info_ptr->manager_t_id, NULL, (void *(*)(void *)) manage_connections, server_info_ptr);
+    pthread_create(&server_info_ptr->manage_thread, NULL, (void *(*)(void *)) manage_connections, server_info_ptr);
     return server_info_ptr;
 }
 
@@ -60,6 +63,39 @@ void send_message(int32_t client_socket, char *message) {
     } while (remain_data > 0);
 }
 
+void work_with_client(client_arguments *args) {
+    char client_message_part[BUFSIZ] = {0};
+    while (recv(args->client_socket, client_message_part, BUFSIZ, 0) > 0) {
+        char *request_xml = receive_message(client_message_part, args->client_socket);
+        if (request_xml == NULL) continue;
+        query_info *info = parse_client_xml_request(request_xml);
+        pthread_mutex_lock(&args->info->mutex);
+        char *response_xml = execute_command(info, args->info->data);
+        pthread_mutex_unlock(&args->info->mutex);
+//        puts(response_xml);
+        free(request_xml);
+        char response_header[BUFSIZ];
+        bzero(response_header, BUFSIZ);
+        sprintf(response_header, "%lu", strlen(response_xml));
+        if (write(args->client_socket, response_header, BUFSIZ) < 0) break;
+        send_message(args->client_socket, response_xml);
+        free(response_xml);
+        bzero(client_message_part, BUFSIZ);
+    }
+}
+
+_Noreturn void manage_connections(server_info *info) {
+    while (true) {
+        struct sockaddr_in client_address;
+        socklen_t address_len = sizeof(client_address);
+        int32_t accepted_socket = accept(info->server_fd, (struct sockaddr *) &client_address, &address_len);
+        client_arguments  *arg = malloc(sizeof(client_arguments));
+        arg->client_socket = accepted_socket;
+        arg->info = info;
+        pthread_create(&arg->thread, NULL, (void *(*)(void *)) work_with_client, arg);
+    }
+}
+
 char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
     uint16_t number = 0;
@@ -84,8 +120,8 @@ char *execute_command(query_info *info, datafile *data) {
                 update_node_labels(data, node_cell, label_cell);
             }
             for (node *prop = info->props->first; prop; prop = prop->next) {
-                cell_ptr *key_cell = create_string_cell(data, ((property *)prop->value)->key);
-                cell_ptr *value_cell = create_string_cell(data, ((property *)prop->value)->value);
+                cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
+                cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
                 cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
                 update_node_attributes(data, node_cell, attribute_cell);
             }

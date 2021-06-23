@@ -6,7 +6,6 @@
 #include "cells.h"
 
 #define BLOCK_SIZE 1024
-#define STR_METADATA 2
 #define LABELS_IN_BLOCK ((BLOCK_SIZE-sizeof(block_metadata))/sizeof(label_cell))
 #define ATTRIBUTES_IN_BLOCK ((BLOCK_SIZE-sizeof(block_metadata))/sizeof(attribute_cell))
 #define RELATIONS_IN_BLOCK ((BLOCK_SIZE-sizeof(block_metadata))/sizeof(relation_cell))
