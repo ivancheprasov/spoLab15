@@ -1,5 +1,6 @@
 #include <string.h>
 #include "message.h"
+#include <libxml/xmlschemastypes.h>
 
 char *build_client_xml_request(query_info *info) {
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
@@ -36,12 +37,16 @@ char *build_client_xml_request(query_info *info) {
 void parse_xml_response(char *xml_request, char *response_string) {
     xmlDocPtr doc = xmlParseDoc(BAD_CAST xml_request);
     xmlNode *response = xmlDocGetRootElement(doc);
-    xmlChar *command = xmlGetProp(response, BAD_CAST "command");
+    char *command = xmlGetProp(response, BAD_CAST "command");
     char *command_type = (char *) command;
     xmlChar *number = xmlGetProp(response, BAD_CAST "number");
+    if(command_type == NULL) {
+        strcpy(response_string, "BAD REQUEST");
+        return;
+    }
     if (strcmp(command_type, "match") == 0) {
         sprintf(response_string, "Number of matching nodes: %s", number);
-        uint16_t offset = strlen(response_string);
+        uint32_t offset = strlen(response_string);
         int32_t i = 0;
         for (xmlNode *node = response->children; node; node = node->next) {
             i++;
@@ -81,7 +86,7 @@ void parse_xml_response(char *xml_request, char *response_string) {
             strcpy(command_type_string, "removed");
         }
         if (strcmp((char *) child->name, "labels") == 0) {
-            char labels_string[BUFSIZ];
+            char labels_string[BUFSIZ] = {0};
             get_node_labels_string(child, labels_string);
             sprintf(response_string, "Number of nodes with labels (%s) %s: %s", labels_string, command_type_string,
                     number);
@@ -136,6 +141,14 @@ void free_query_info(query_info *info) {
 
 query_info *parse_client_xml_request(char *xml_request) {
     xmlDocPtr doc = xmlParseDoc(BAD_CAST xml_request);
+    xmlSchema *schema = NULL;
+    xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./schema.xsd");
+    xmlSchemaSetParserErrors(parser_ctxt, (xmlSchemaValidityErrorFunc) fprintf, (xmlSchemaValidityWarningFunc) fprintf, stderr);
+    schema = xmlSchemaParse(parser_ctxt);
+    xmlSchemaValidCtxtPtr valid_ctxt = xmlSchemaNewValidCtxt(schema);
+    xmlSchemaSetValidErrors(valid_ctxt, (xmlSchemaValidityErrorFunc) fprintf, (xmlSchemaValidityWarningFunc) fprintf, stderr);
+    int ret = xmlSchemaValidateDoc(valid_ctxt, doc);
+    if(ret != 0) return NULL;
     if (doc == NULL) return NULL;
     xmlNode *request = xmlDocGetRootElement(doc);
     if (request == NULL) return NULL;
@@ -294,7 +307,7 @@ static void get_node_labels_string(xmlNode *labels, char *labels_string) {
             memcpy(labels_string + offset, ", ", 2);
             offset += 2;
             char label_name_str[strlen((char *) name)];
-            bzero(label_name_str, strlen(label_name_str));
+            bzero(label_name_str, strlen((char *) name) + 1);
             memcpy(label_name_str, (char *) name, strlen((char *) name));
             memcpy(labels_string + offset, label_name_str, strlen(label_name_str));
         }

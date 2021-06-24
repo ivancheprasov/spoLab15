@@ -59,14 +59,14 @@ typedef struct {
 
 typedef struct {
     block_metadata metadata;
-    int32_t next_block;
+    int32_t prev_block;
     char reserved[9];
     node_cell nodes[NODES_IN_BLOCK];
 } node_block;
 
 typedef struct {
     block_metadata metadata;
-    int32_t next_node_block;
+    int32_t prev_node_block;
     int32_t empty_block;
     int32_t fragmented_node_block;
     int16_t empty_node_number;

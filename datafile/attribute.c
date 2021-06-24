@@ -33,7 +33,7 @@ cell_ptr *create_attribute_cell(datafile *data, cell_ptr *key_cell, cell_ptr *va
     int16_t new_attribute_offset;
     if (old_cell.prev.block_num == 0 && old_cell.prev.offset == 0) {
         new_attribute_offset = (int16_t) (data->ctrl_block->empty_attribute_number + 1);
-        if (new_attribute_offset > ATTRIBUTES_IN_BLOCK) {
+        if (new_attribute_offset > ATTRIBUTES_IN_BLOCK - 1) {
             new_attribute_offset = 0;
             data->ctrl_block->fragmented_attribute_block = -1;
         }

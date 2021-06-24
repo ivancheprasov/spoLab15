@@ -32,15 +32,7 @@ server_info *startup(uint16_t port, datafile *data) {
     return server_info_ptr;
 }
 
-char *receive_message(char *client_message_part, int32_t accepted_socket) {
-    long content_length = strtol(client_message_part, NULL, 10);
-    if (content_length <= 0) {
-        write(accepted_socket, "Bad request!", 12);
-        return NULL;
-    }
-    printf("Content length: %lu bytes\n", content_length);
-    char *request_xml = malloc(content_length);
-    bzero(request_xml, content_length);
+void receive_message(char *client_message_part, int32_t accepted_socket, char *request_xml, long content_length) {
     long remain_data = content_length;
     while (remain_data > 0) {
         bzero(client_message_part, BUFSIZ);
@@ -50,7 +42,6 @@ char *receive_message(char *client_message_part, int32_t accepted_socket) {
         printf("⬇ Received %ld bytes of request... Remaining: %ld\n\n", len, remain_data);
     }
     puts(request_xml);
-    return request_xml;
 }
 
 void send_message(int32_t client_socket, char *message) {
@@ -71,14 +62,24 @@ void send_message(int32_t client_socket, char *message) {
 void work_with_client(client_arguments *args) {
     char client_message_part[BUFSIZ] = {0};
     while (recv(args->client_socket, client_message_part, BUFSIZ, 0) > 0) {
-        char *request_xml = receive_message(client_message_part, args->client_socket);
-        if (request_xml == NULL) continue;
+        long content_length = strtol(client_message_part, NULL, 10);
+        if (content_length <= 0) {
+            write(args->client_socket, "Bad request!", 12);
+            continue;
+        }
+        printf("Content length: %lu bytes\n", content_length);
+        char request_xml[content_length];
+        bzero(&request_xml, content_length);
+        receive_message(client_message_part, args->client_socket, request_xml, content_length);
         query_info *info = parse_client_xml_request(request_xml);
-        pthread_mutex_lock(&args->info->mutex);
+        if (info == NULL) {
+            write(args->client_socket, "Bad request!", 12);
+            continue;
+        }
+//        pthread_mutex_lock(&args->info->mutex);
         char *response_xml = execute_command(info, args->info->data);
-        pthread_mutex_unlock(&args->info->mutex);
+//        pthread_mutex_unlock(&args->info->mutex);
 //        puts(response_xml);
-        free(request_xml);
         char response_header[BUFSIZ];
         bzero(response_header, BUFSIZ);
         sprintf(response_header, "%lu", strlen(response_xml));
@@ -129,19 +130,27 @@ char *execute_command(query_info *info, datafile *data) {
             }
             return build_xml_create_or_delete_response("create", "relation", number * number2);
         } else {
-            number = 1;
             //создание узла с заданными параметрами
-            cell_ptr *node_cell = create_node_cell(data);
-            for (node *label = info->labels->first; label; label = label->next) {
-                cell_ptr *string_cell = create_string_cell(data, label->value);
-                cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
-                update_node_labels(data, node_cell, label_cell);
-            }
-            for (node *prop = info->props->first; prop; prop = prop->next) {
-                cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
-                cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
-                cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
-                update_node_attributes(data, node_cell, attribute_cell);
+            for (int i = 0; i < 25000; i++) {
+                cell_ptr *node_cell = create_node_cell(data);
+                for (node *label = info->labels->first; label; label = label->next) {
+                    cell_ptr *string_cell = create_string_cell(data, label->value);
+                    cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
+                    update_node_labels(data, node_cell, label_cell);
+                    free(string_cell);
+                    free(label_cell);
+                }
+                for (node *prop = info->props->first; prop; prop = prop->next) {
+                    cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
+                    cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
+                    cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
+                    update_node_attributes(data, node_cell, attribute_cell);
+                    free(key_cell);
+                    free(value_cell);
+                    free(attribute_cell);
+                }
+                number++;
+                free(node_cell);
             }
             return build_xml_create_or_delete_response("create", "node", number);
         }

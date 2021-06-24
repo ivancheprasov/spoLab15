@@ -34,7 +34,7 @@ cell_ptr *create_relation_cell(datafile *data, cell_ptr *string_cell, cell_ptr *
     int16_t new_relation_offset;
     if (old_cell.prev.block_num == 0 && old_cell.prev.offset == 0) {
         new_relation_offset = (int16_t) (data->ctrl_block->empty_relation_number + 1);
-        if (new_relation_offset > RELATIONS_IN_BLOCK) {
+        if (new_relation_offset > RELATIONS_IN_BLOCK - 1) {
             new_relation_offset = 0;
             data->ctrl_block->fragmented_relation_block = -1;
         }

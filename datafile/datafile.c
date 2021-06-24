@@ -26,7 +26,6 @@ datafile *init_data(char *file_path) {
         ctrl_block->empty_node_number = 0;
         data->ctrl_block = ctrl_block;
         data->file = data_file;
-        sleep(1);
         update_control_block(data);
     }
     return data;
@@ -50,46 +49,23 @@ cell_ptr *create_string_cell(datafile *data, char *string) {
     cell_ptr *ptr = malloc(sizeof(cell_ptr));
 
     memcpy(&empty_fragment_size, read.data + data->ctrl_block->empty_string_offset, sizeof(empty_fragment_size));
-    if (empty_fragment_size == 0) {
-        empty_fragment_size = (int16_t) (1020 - data->ctrl_block->empty_string_offset);
-        if (empty_fragment_size > str_length) {
-            ptr->block_num = data->ctrl_block->fragmented_string_block;
-            ptr->offset = data->ctrl_block->empty_string_offset;
-            data->ctrl_block->empty_string_offset += str_length + 2;
-            memcpy(read.data + ptr->offset, &str_length, 2);
-            strcpy(read.data + ptr->offset + 2, string);
-        } else {
-            int32_t new_block_number = data->ctrl_block->empty_block;
-            allocate_new_block(data, STRING);
-            data->ctrl_block->fragmented_string_block = new_block_number;
-            data->ctrl_block->empty_string_offset = str_length + 2;
-            ptr->offset = 0;
-            ptr->block_num = new_block_number;
-            fill_block(data, new_block_number, &read);
-            memcpy(read.data, &str_length, 2);
-            strcpy(read.data + 2, string);
-        }
+    empty_fragment_size = (int16_t) (1020 - data->ctrl_block->empty_string_offset);
+    if (empty_fragment_size > str_length) {
+        ptr->block_num = data->ctrl_block->fragmented_string_block;
+        ptr->offset = data->ctrl_block->empty_string_offset;
+        data->ctrl_block->empty_string_offset += str_length + 2;
+        memcpy(read.data + ptr->offset, &str_length, 2);
+        strcpy(read.data + ptr->offset + 2, string);
     } else {
-        cell_ptr offset_ptr = {0};
-        do {
-            memcpy(&offset_ptr, read.data + data->ctrl_block->empty_string_offset + sizeof(empty_fragment_size),
-                   sizeof(cell_ptr));
-            if (offset_ptr.block_num != block_number) {
-                fill_block(data, offset_ptr.block_num, &read);
-            }
-            memcpy(&empty_fragment_size, read.data + offset_ptr.offset, sizeof(empty_fragment_size));
-        } while (empty_fragment_size < str_length || offset_ptr.block_num != 0);
-        if (offset_ptr.block_num == 0) {
-            int32_t new_block_number = data->ctrl_block->empty_block;
-            allocate_new_block(data, STRING);
-            data->ctrl_block->fragmented_string_block = new_block_number;
-            data->ctrl_block->empty_string_offset = str_length + 2;
-            ptr->offset = 0;
-            ptr->block_num = new_block_number;
-            fill_block(data, new_block_number, &read);
-            memcpy(read.data, &str_length, 2);
-            strcpy(read.data + 2, string);
-        }
+        int32_t new_block_number = data->ctrl_block->empty_block;
+        allocate_new_block(data, STRING);
+        data->ctrl_block->fragmented_string_block = new_block_number;
+        data->ctrl_block->empty_string_offset = str_length + 2;
+        ptr->offset = 0;
+        ptr->block_num = new_block_number;
+        fill_block(data, new_block_number, &read);
+        memcpy(read.data, &str_length, 2);
+        strcpy(read.data + 2, string);
     }
     update_data_block(data, ptr->block_num, &read);
     update_control_block(data);
@@ -239,9 +215,9 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             number += 1;
         }
         node_block_num = read_node.metadata.type == CONTROL ?
-                         ((control_block *) &read_node)->next_node_block
+                         ((control_block *) &read_node)->prev_node_block
                                                             :
-                         ((node_block *) &read_node)->next_block;
+                         ((node_block *) &read_node)->prev_block;
     } while (node_block_num != 0);
     return number;
 }
@@ -258,12 +234,14 @@ void allocate_new_block(datafile *data, TYPE type) {
         case NODE:
             data->ctrl_block->fragmented_node_block = block_number;
             if (block_number == 1) {
-                data->ctrl_block->next_node_block = block_number;
+                data->ctrl_block->prev_node_block = block_number;
             } else {
                 node_block block = {0};
-                fill_block(data, data->ctrl_block->next_node_block, &block);
-                block.next_block = block_number;
-                update_data_block(data, data->ctrl_block->next_node_block, &block);
+                block.metadata.type = NODE;
+                block.prev_block = data->ctrl_block->prev_node_block;
+                update_data_block(data, block_number, &block);
+                data->ctrl_block->prev_node_block = block_number;
+                update_control_block(data);
             }
             break;
         case LABEL:

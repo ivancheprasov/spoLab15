@@ -35,7 +35,7 @@ cell_ptr *create_label_cell(datafile *data, cell_ptr *string_cell, cell_ptr *nod
     int16_t new_label_offset;
     if (old_cell.prev.block_num == 0 && old_cell.prev.offset == 0) {
         new_label_offset = (int16_t) (data->ctrl_block->empty_label_number + 1);
-        if (new_label_offset > LABELS_IN_BLOCK) {
+        if (new_label_offset > LABELS_IN_BLOCK - 1) {
             new_label_offset = 0;
             data->ctrl_block->fragmented_label_block = -1;
         }

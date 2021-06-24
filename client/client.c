@@ -43,7 +43,7 @@ char* receive_message(int32_t server_fd, long content_length) {
         response_offset += receive_len;
         printf("⬇ Received %ld bytes of response... Remaining: %ld\n\n", receive_len, remain_data);
     }
-    memcpy(response_xml + response_offset, "\0", 1);
+    response_xml[response_offset] = '\0';
     return response_xml;
 }
 
@@ -177,6 +177,40 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
             }
         }
     }
+}
+
+query_info *parse_data(char *input, size_t length) {
+    query_info *info = init_query_info();
+    strcpy(info->command_type, "create");
+    char *label = malloc(10);
+    char key [50];
+    char symbol = input[6];
+    int i =0;
+    while(symbol != '"') {
+        memcpy(label+i, &symbol, 1);
+        i++;
+        symbol = input[6+i];
+    }
+    add_last(info->labels, label);
+    symbol = input[i+20];
+    int j;
+    while(symbol != 'R') {
+        bzero(&key, 50);
+        j = 0;
+        while(symbol != ',') {
+            memcpy(key+j, &symbol, 1);
+            i++;
+            j++;
+            symbol = input[20+i];
+        }
+        i+= 2;
+        symbol = input[20+i];
+        property *prop = malloc(sizeof (property));
+        strcpy(prop->key, key);
+        strcpy(prop->value, key);
+        add_last(info->props, prop);
+    }
+    return info;
 }
 
 static void handle_sending_error() {

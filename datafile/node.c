@@ -23,7 +23,6 @@ cell_ptr *create_node_cell(datafile *data) {
     block read_node;
     fill_block(data, data->ctrl_block->fragmented_node_block, &read_node);
     node_cell old_cell;
-
     if (read_node.metadata.type == CONTROL) {
         old_cell = ((control_block *) &read_node)->nodes[data->ctrl_block->empty_node_number];
         memcpy(&((control_block *) &read_node)->nodes[data->ctrl_block->empty_node_number], &new_cell,
@@ -39,8 +38,8 @@ cell_ptr *create_node_cell(datafile *data) {
     int16_t new_node_offset;
     if (old_cell.last_label.block_num == 0 && old_cell.last_label.offset == 0) {
         new_node_offset = (int16_t) (data->ctrl_block->empty_node_number + 1);
-        if (new_node_offset > NODES_IN_CONTROL_BLOCK && ptr->block_num == 0 ||
-            new_node_offset > NODES_IN_BLOCK && ptr->block_num != 0) {
+        if (new_node_offset > NODES_IN_CONTROL_BLOCK - 1 && ptr->block_num == 0 ||
+            new_node_offset > NODES_IN_BLOCK - 1 && ptr->block_num != 0) {
             new_node_offset = 0;
             data->ctrl_block->fragmented_node_block = -1;
         }

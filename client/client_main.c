@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     puts("Enter CYPHER query or type \"exit\" to leave");
     long count = server_fd;
     char *response = malloc(BUFSIZ);
-    char response_string [BUFSIZ];
+    char response_string [RESPONSE_BUFFER_SIZE] = {0};
     while (count > 0) {
         getline(&input, &length, stdin);
         if(strcmp(input, "q\n") == 0) break;
@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
             continue;
         }
         query_info *info = get_query_info(result);
+        if(info == NULL) continue;
+//        query_info *info = parse_data(input, length);
         char *request = build_client_xml_request(info);
         puts(request);
         send_message(server_fd, request);
@@ -53,7 +55,7 @@ int main(int argc, char **argv) {
         long content_length = strtol(response, NULL, 10);
         char *response_xml = receive_message(server_fd, content_length);
         puts(response_xml);
-        bzero(response_string, sizeof(response_string));
+        bzero(response_string, RESPONSE_BUFFER_SIZE);
         parse_xml_response(response_xml, response_string);
         puts(response_string);
         puts("");
