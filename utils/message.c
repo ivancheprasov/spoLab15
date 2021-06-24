@@ -186,9 +186,9 @@ query_info *parse_client_xml_request(char *xml_request) {
     return info;
 }
 
-char *build_xml_match_response(linked_list *match_results, uint16_t number) {
+char *build_xml_match_response(linked_list *match_results, uint64_t number) {
     char buffer[BUFSIZ];
-    sprintf(buffer, "%hu", number);
+    sprintf(buffer, "%lu", number);
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlNodePtr response = xmlNewNode(NULL, BAD_CAST "response");
     xmlDocSetRootElement(doc, response);
@@ -207,9 +207,9 @@ char *build_xml_match_response(linked_list *match_results, uint16_t number) {
     return (char *) response_string;
 }
 
-char *build_xml_create_or_delete_response(char *command_type, char *object_type, uint16_t number) {
+char *build_xml_create_or_delete_response(char *command_type, char *object_type, uint64_t number) {
     char buffer[BUFSIZ];
-    sprintf(buffer, "%hu", number);
+    sprintf(buffer, "%lu", number);
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlNodePtr response = xmlNewNode(NULL, BAD_CAST "response");
     xmlDocSetRootElement(doc, response);
@@ -222,9 +222,9 @@ char *build_xml_create_or_delete_response(char *command_type, char *object_type,
     return (char *) response_string;
 }
 
-char *build_xml_set_or_remove_response(char *command_type, char *object_type, linked_list *changed, uint16_t number) {
+char *build_xml_set_or_remove_response(char *command_type, char *object_type, linked_list *changed, uint64_t number) {
     char buffer[BUFSIZ];
-    sprintf(buffer, "%hu", number);
+    sprintf(buffer, "%lu", number);
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlNodePtr response = xmlNewNode(NULL, BAD_CAST "response");
     xmlDocSetRootElement(doc, response);

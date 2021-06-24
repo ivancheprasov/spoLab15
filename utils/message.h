@@ -44,11 +44,11 @@ match_result *init_match_result();
 
 void free_query_info(query_info * info);
 
-char *build_xml_match_response(linked_list *match_results, uint16_t number);
+char *build_xml_match_response(linked_list *match_results, uint64_t number);
 
-char *build_xml_create_or_delete_response(char *command_type, char *object_type, uint16_t number);
+char *build_xml_create_or_delete_response(char *command_type, char *object_type, uint64_t number);
 
-char *build_xml_set_or_remove_response(char *command_type, char *object_type, linked_list *changed, uint16_t number);
+char *build_xml_set_or_remove_response(char *command_type, char *object_type, linked_list *changed, uint64_t number);
 
 bool by_property_values(void *value, char *to_find_key, char* to_find_value);
 

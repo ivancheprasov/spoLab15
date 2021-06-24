@@ -76,10 +76,9 @@ void work_with_client(client_arguments *args) {
             write(args->client_socket, "Bad request!", 12);
             continue;
         }
-//        pthread_mutex_lock(&args->info->mutex);
+        pthread_mutex_lock(&args->info->mutex);
         char *response_xml = execute_command(info, args->info->data);
-//        pthread_mutex_unlock(&args->info->mutex);
-//        puts(response_xml);
+        pthread_mutex_unlock(&args->info->mutex);
         char response_header[BUFSIZ];
         bzero(response_header, BUFSIZ);
         sprintf(response_header, "%lu", strlen(response_xml));
@@ -104,7 +103,7 @@ _Noreturn void manage_connections(server_info *info) {
 
 char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
-    uint16_t number = 0;
+    uint64_t number = 0;
     if (strcmp(command, "match") == 0) {
         //возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
         linked_list *match_results = init_list();
@@ -131,27 +130,25 @@ char *execute_command(query_info *info, datafile *data) {
             return build_xml_create_or_delete_response("create", "relation", number * number2);
         } else {
             //создание узла с заданными параметрами
-            for (int i = 0; i < 25000; i++) {
-                cell_ptr *node_cell = create_node_cell(data);
-                for (node *label = info->labels->first; label; label = label->next) {
-                    cell_ptr *string_cell = create_string_cell(data, label->value);
-                    cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
-                    update_node_labels(data, node_cell, label_cell);
-                    free(string_cell);
-                    free(label_cell);
-                }
-                for (node *prop = info->props->first; prop; prop = prop->next) {
-                    cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
-                    cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
-                    cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
-                    update_node_attributes(data, node_cell, attribute_cell);
-                    free(key_cell);
-                    free(value_cell);
-                    free(attribute_cell);
-                }
-                number++;
-                free(node_cell);
+            cell_ptr *node_cell = create_node_cell(data);
+            for (node *label = info->labels->first; label; label = label->next) {
+                cell_ptr *string_cell = create_string_cell(data, label->value);
+                cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
+                update_node_labels(data, node_cell, label_cell);
+                free(string_cell);
+                free(label_cell);
             }
+            for (node *prop = info->props->first; prop; prop = prop->next) {
+                cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
+                cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
+                cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
+                update_node_attributes(data, node_cell, attribute_cell);
+                free(key_cell);
+                free(value_cell);
+                free(attribute_cell);
+            }
+            number++;
+            free(node_cell);
             return build_xml_create_or_delete_response("create", "node", number);
         }
     }
