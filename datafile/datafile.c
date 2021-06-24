@@ -96,9 +96,10 @@ cell_ptr *create_string_cell(datafile *data, char *string) {
     return ptr;
 }
 
-long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list *nodes) {
+long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list *nodes, bool is_node_a) {
     int32_t node_block_num = 0;
     long number = 0;
+    node *current_node;
     do {
         block read_node = {0};
         fill_block(data, node_block_num, &read_node);
@@ -131,23 +132,98 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             }
             linked_list *node_labels = init_list();
             linked_list *node_props = init_list();
-            if (nodes == NULL) {
-                if (!match_labels(info->labels, data, label, NULL)) {
-                    free_list(node_labels);
-                    continue;
+            if (is_node_a) {
+                if (nodes == NULL) {
+                    if (!match_labels(info->labels, data, label, NULL)) {
+                        free_list(node_labels);
+                        continue;
+                    }
+                    if (!match_attributes(info->props, data, attribute, NULL)) {
+                        free_list(node_props);
+                        continue;
+                    }
+                } else {
+                    if (!match_labels(info->labels, data, label, node_labels)) {
+                        free_list(node_labels);
+                        continue;
+                    }
+                    if (!match_attributes(info->props, data, attribute, node_props)) {
+                        free_list(node_props);
+                        continue;
+                    }
                 }
-                if (!match_attributes(info->props, data, attribute, NULL)) {
-                    free_list(node_props);
-                    continue;
+                if (info->has_relation) {
+                    bool found = false;
+                    relation_block read_relation = {0};
+                    fill_block(data, node.last_relation.block_num, &read_relation);
+                    relation_cell relation = {0};
+                    if (read_relation.metadata.type != CONTROL) {
+                        memcpy(&relation, &read_relation.relations[node.last_relation.offset], sizeof(relation_cell));
+                    }
+                    if (relation.name.block_num == 0) continue;
+                    cell_ptr prev;
+                    do {
+                        cell_ptr string_ptr = relation.name;
+                        str_block read_string = {0};
+                        fill_block(data, string_ptr.block_num, &read_string);
+                        int16_t size = 0;
+                        memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
+                        char *relation_name = malloc(size + 1);
+                        bzero(relation_name, strlen(relation_name) + 1);
+                        strcpy(relation_name, &read_string.data[string_ptr.offset + 2]);
+                        relation_name[size] = '\0';
+                        if (strcmp(relation_name, info->rel_name) == 0) {
+                            block read_node_b = {0};
+                            cell_ptr *node_b_ptr = &relation.node_b;
+                            fill_block(data, node_b_ptr->block_num, &read_node_b);
+                            node_cell node_b = {0};
+                            if (read_node_b.metadata.type == CONTROL) {
+                                memcpy(&node_b, &((control_block *) &read_node_b)->nodes[node_b_ptr->offset],
+                                       sizeof(node_cell));
+                            } else {
+                                memcpy(&node_b, &((node_block *) &read_node_b)->nodes[node_b_ptr->offset],
+                                       sizeof(node_cell));
+                            }
+                            linked_list *node_b_list = init_list();
+                            match(info, data, node_b_list, NULL, false);
+                            for (current_node = node_b_list->first; current_node; current_node = current_node->next) {
+                                cell_ptr *current_ptr = (cell_ptr *) current_node->value;
+                                if (
+                                        current_ptr->block_num == node_b_ptr->block_num &&
+                                        current_ptr->offset == node_b_ptr->offset
+                                        ) {
+                                    found = true;
+                                }
+                            }
+                            free_list(node_b_list);
+                            if (!found) continue;
+                        }
+                        relation_block read_relations = {0};
+                        prev = relation.prev;
+                        fill_block(data, prev.block_num, &read_relations);
+                        memcpy(&relation, &read_relations.relations[prev.offset], sizeof(relation_cell));
+                    } while (!(prev.block_num == 0 && prev.offset == 0));
+                    if (!found) continue;
                 }
             } else {
-                if (!match_labels(info->labels, data, label, node_labels)) {
-                    free_list(node_labels);
-                    continue;
-                }
-                if (!match_attributes(info->props, data, attribute, node_props)) {
-                    free_list(node_props);
-                    continue;
+                if (nodes == NULL) {
+                    if (!match_labels(info->rel_node_labels, data, label, NULL)) {
+                        free_list(node_labels);
+                        continue;
+                    }
+                    if (!match_attributes(info->rel_node_props, data, attribute, NULL)) {
+                        free_list(node_props);
+                        continue;
+                    }
+                } else {
+                    if (!match_labels(info->rel_node_labels, data, label, node_labels)) {
+                        free_list(node_labels);
+                        continue;
+                    }
+                    if (!match_attributes(info->rel_node_props, data, attribute, node_props)) {
+                        free_list(node_props);
+                        continue;
+                    }
                 }
             }
             cell_ptr *ptr = malloc(sizeof(cell_ptr));

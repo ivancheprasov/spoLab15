@@ -10,6 +10,7 @@
 #include "../datafile/node.h"
 #include "../datafile/label.h"
 #include "../datafile/attribute.h"
+#include "../datafile/relation.h"
 
 server_info *startup(uint16_t port, datafile *data) {
     server_info *server_info_ptr = create_server_info(port);
@@ -19,7 +20,7 @@ server_info *startup(uint16_t port, datafile *data) {
     address.sin_port = htons(server_info_ptr->port);
     address.sin_family = AF_INET;
     server_info_ptr->server_fd = created_socket;
-    server_info_ptr->data = malloc(sizeof (datafile));
+    server_info_ptr->data = malloc(sizeof(datafile));
     memcpy(server_info_ptr->data, data, sizeof(datafile));
     pthread_mutex_init(&server_info_ptr->mutex, NULL);
     int bind_result = bind(created_socket, (const struct sockaddr *) &address, sizeof(address));
@@ -93,7 +94,7 @@ _Noreturn void manage_connections(server_info *info) {
         struct sockaddr_in client_address;
         socklen_t address_len = sizeof(client_address);
         int32_t accepted_socket = accept(info->server_fd, (struct sockaddr *) &client_address, &address_len);
-        client_arguments  *arg = malloc(sizeof(client_arguments));
+        client_arguments *arg = malloc(sizeof(client_arguments));
         arg->client_socket = accepted_socket;
         arg->info = info;
         pthread_create(&arg->thread, NULL, (void *(*)(void *)) work_with_client, arg);
@@ -104,19 +105,32 @@ char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
     uint16_t number = 0;
     if (strcmp(command, "match") == 0) {
-        //toDo возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
+        //возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
         linked_list *match_results = init_list();
         linked_list *node_ptr = init_list();
-        number = match(info, data, node_ptr, match_results);
+        number = match(info, data, node_ptr, match_results, true);
         return build_xml_match_response(match_results, number);
     }
     if (strcmp(command, "create") == 0) {
         if (info->has_relation) {
-            //toDo сравнение с заданным шаблоном, создание указанной связи, подсчёт кол-ва созданных связей
-            return build_xml_create_or_delete_response("create", "relation", number);
+            //сравнение с заданным шаблоном, создание указанной связи, подсчёт кол-ва созданных связей
+            linked_list *node_a_ptr = init_list();
+            linked_list *node_b_ptr = init_list();
+            info->has_relation = false;
+            number = match(info, data, node_a_ptr, NULL, true);
+            uint16_t number2 = match(info, data, node_b_ptr, NULL, false);
+            cell_ptr *string_ptr = create_string_cell(data, info->rel_name);
+            for (node *first_node = node_a_ptr->first; first_node; first_node = first_node->next) {
+                for (node *second_node = node_b_ptr->first; second_node; second_node = second_node->next) {
+                    cell_ptr *relation_cell = create_relation_cell(data, string_ptr, (cell_ptr *) first_node->value,
+                                                                   (cell_ptr *) second_node->value);
+                    update_node_relations(data, (cell_ptr *) first_node->value, relation_cell);
+                }
+            }
+            return build_xml_create_or_delete_response("create", "relation", number * number2);
         } else {
             number = 1;
-            //toDo создание узла с заданными параметрами
+            //создание узла с заданными параметрами
             cell_ptr *node_cell = create_node_cell(data);
             for (node *label = info->labels->first; label; label = label->next) {
                 cell_ptr *string_cell = create_string_cell(data, label->value);
@@ -134,21 +148,20 @@ char *execute_command(query_info *info, datafile *data) {
     }
     if (strcmp(command, "delete") == 0) {
         linked_list *node_ptr = init_list();
-        number = match(info, data, node_ptr, NULL);
-
+        number = match(info, data, node_ptr, NULL, true);
         if (info->has_relation) {
-            //toDo сравнение с заданным шаблоном, удаление указанной связи, подсчёт кол-ва удалённых связей
+            //сравнение с заданным шаблоном, удаление указанной связи, подсчёт кол-ва удалённых связей
             return build_xml_create_or_delete_response("delete", "relation", number);
         } else {
             delete_nodes(data, node_ptr);
-            //toDo сравнение с заданным шаблоном, удаление указанных узлов, подсчёт кол-ва удалённых узлов
+            //сравнение с заданным шаблоном, удаление указанных узлов, подсчёт кол-ва удалённых узлов
             return build_xml_create_or_delete_response("delete", "node", number);
         }
     }
     if (strcmp(command, "set") == 0) {
-        //toDo сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
+        //сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
         linked_list *node_ptr = init_list();
-        number = match(info, data, node_ptr, NULL);
+        number = match(info, data, node_ptr, NULL, true);
         if (info->changed_labels->size > 0) {
             set_new_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("set", "labels", info->changed_labels, number);
@@ -159,9 +172,9 @@ char *execute_command(query_info *info, datafile *data) {
         return NULL;
     }
     if (strcmp(command, "remove") == 0) {
-        //toDo сравнение с заданным шаблоном, удаление changed, подсчёт кол-ва изменений
+        //сравнение с заданным шаблоном, удаление changed, подсчёт кол-ва изменений
         linked_list *node_ptr = init_list();
-        match(info, data, node_ptr, NULL);
+        match(info, data, node_ptr, NULL, true);
         if (info->changed_labels->size > 0) {
             number = remove_labels(data, node_ptr, info->changed_labels);
             return build_xml_set_or_remove_response("remove", "labels", info->changed_labels, number);

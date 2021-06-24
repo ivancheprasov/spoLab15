@@ -48,6 +48,7 @@ typedef struct {
 
 typedef struct {
     block_metadata metadata;
+    char reserved [12];
     relation_cell relations[RELATIONS_IN_BLOCK];
 } relation_block;
 
@@ -74,7 +75,7 @@ typedef struct {
     int32_t fragmented_attribute_block;
     int16_t empty_attribute_number;
     int32_t fragmented_relation_block;
-    int16_t empty_relation_node;
+    int16_t empty_relation_number;
     int32_t fragmented_string_block;
     int16_t empty_string_offset;
     char reserved[13];

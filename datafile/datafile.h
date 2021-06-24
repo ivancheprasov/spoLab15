@@ -19,7 +19,7 @@ void fill_block(datafile *data, int32_t block_number, void *buffer);
 
 cell_ptr *create_string_cell(datafile *data, char *string);
 
-long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list *nodes);
+long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list *nodes, bool is_node_a);
 
 void update_control_block(datafile *data);
 

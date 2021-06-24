@@ -86,6 +86,23 @@ void update_node_attributes(datafile *data, cell_ptr *node_ptr, cell_ptr *attrib
     fill_block(data, 0, data->ctrl_block);
 }
 
+void update_node_relations(datafile *data, cell_ptr *node_ptr, cell_ptr *relation_ptr) {
+    node_cell node = {0};
+    block read_node;
+    fill_block(data, node_ptr->block_num, &read_node);
+    if (read_node.metadata.type == CONTROL) {
+        memcpy(&node, &((control_block *) &read_node)->nodes[node_ptr->offset], sizeof(node_cell));
+        memcpy(&node.last_relation, relation_ptr, sizeof(cell_ptr));
+        memcpy(&((control_block *) &read_node)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+    } else {
+        memcpy(&node, &((node_block *) &read_node)->nodes[node_ptr->offset], sizeof(node_cell));
+        memcpy(&node.last_relation, relation_ptr, sizeof(cell_ptr));
+        memcpy(&((node_block *) &read_node)->nodes[node_ptr->offset], &node, sizeof(node_cell));
+    }
+    update_data_block(data, node_ptr->block_num, &read_node);
+    fill_block(data, 0, data->ctrl_block);
+}
+
 void delete_nodes(datafile *data, linked_list *node_cells) {
     remove_labels(data, node_cells, NULL);
     remove_attributes(data, node_cells, NULL);

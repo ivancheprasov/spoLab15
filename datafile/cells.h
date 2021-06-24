@@ -24,9 +24,8 @@ typedef struct {
 typedef struct {
     cell_ptr prev;
     cell_ptr name;
-    int32_t node_b_block;
-    int8_t node_b_offset;
-} relation_cell;//17 bytes
+    cell_ptr node_b;
+} relation_cell;//18 bytes
 
 typedef struct {
     char is_empty;
