@@ -15,6 +15,6 @@ void update_node_attributes(datafile *data, cell_ptr *node_ptr, cell_ptr *attrib
 
 void update_node_relations(datafile *data, cell_ptr *node_ptr, cell_ptr *relation_ptr);
 
-void delete_nodes(datafile *data, linked_list *node_cells);
+void delete_nodes(datafile *data, linked_list *node_cells, query_info *info);
 
 #endif //SPOLAB15_NODE_H

@@ -6,6 +6,7 @@
 #include "node.h"
 #include "attribute.h"
 #include "label.h"
+#include "relation.h"
 
 cell_ptr *create_node_cell(datafile *data) {
     if (data->ctrl_block->fragmented_node_block == -1) {
@@ -103,9 +104,10 @@ void update_node_relations(datafile *data, cell_ptr *node_ptr, cell_ptr *relatio
     fill_block(data, 0, data->ctrl_block);
 }
 
-void delete_nodes(datafile *data, linked_list *node_cells) {
+void delete_nodes(datafile *data, linked_list *node_cells, query_info *info) {
     remove_labels(data, node_cells, NULL);
     remove_attributes(data, node_cells, NULL);
+    delete_relations(data, info, node_cells, NULL);
     for (node *current_node = node_cells->first; current_node; current_node = current_node->next) {
         block read_node = {0};
         cell_ptr *node_ptr = current_node->value;

@@ -151,10 +151,11 @@ char *execute_command(query_info *info, datafile *data) {
         number = match(info, data, node_ptr, NULL, true);
         if (info->has_relation) {
             //сравнение с заданным шаблоном, удаление указанной связи, подсчёт кол-ва удалённых связей
+            delete_relations(data, info, node_ptr, info->rel_name);
             return build_xml_create_or_delete_response("delete", "relation", number);
         } else {
-            delete_nodes(data, node_ptr);
             //сравнение с заданным шаблоном, удаление указанных узлов, подсчёт кол-ва удалённых узлов
+            delete_nodes(data, node_ptr, info);
             return build_xml_create_or_delete_response("delete", "node", number);
         }
     }
