@@ -19,10 +19,11 @@ int main(int argc, char **argv) {
         puts("Unable to startup");
         return -1;
     }
-    char input[50] = {0};
+    size_t length;
+    char *input;
     do {
-        fgets(input, 50, stdin);
-    } while(strcmp(input, "q") != 0);
+        getline(&input, &length, stdin);
+    } while(strcmp(input, "q\n") != 0);
     close_server(info_ptr);
     fclose(data->file);
     free(info_ptr);

@@ -7,6 +7,9 @@
 #include <string.h>
 #include <pthread.h>
 #include "server.h"
+#include "../datafile/node.h"
+#include "../datafile/label.h"
+#include "../datafile/attribute.h"
 
 server_info *startup(uint16_t port, datafile *data) {
     server_info *server_info_ptr = create_server_info(port);
@@ -16,7 +19,8 @@ server_info *startup(uint16_t port, datafile *data) {
     address.sin_port = htons(server_info_ptr->port);
     address.sin_family = AF_INET;
     server_info_ptr->server_fd = created_socket;
-    server_info_ptr->data = data;;
+    server_info_ptr->data = malloc(sizeof (datafile));
+    memcpy(server_info_ptr->data, data, sizeof(datafile));
     pthread_mutex_init(&server_info_ptr->mutex, NULL);
     int bind_result = bind(created_socket, (const struct sockaddr *) &address, sizeof(address));
     if (bind_result == -1) {

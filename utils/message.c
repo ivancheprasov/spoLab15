@@ -47,11 +47,11 @@ void parse_xml_response(char *xml_request, char *response_string) {
             i++;
             xmlNode *labels = node->children;
             xmlNode *props = node->children->next;
-            char labels_string[75];
+            char labels_string[75] = {0};
             get_node_labels_string(labels, labels_string);
-            char props_string[100];
+            char props_string[100] = {0};
             get_node_props_string(props, props_string);
-            char node_string[200];
+            char node_string[200] = {0};
             bzero(node_string, 200);
             sprintf(node_string, "\n%d: labels (%s), props {%s}", i, labels_string, props_string);
             memcpy(response_string + offset, node_string, strlen(node_string));
