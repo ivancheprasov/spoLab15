@@ -21,7 +21,7 @@ cell_ptr *create_label_cell(datafile *data, cell_ptr *string_cell, cell_ptr *nod
         memcpy(&new_cell.prev, &((node_block *) &read_node)->nodes[node_cell->offset].last_label, sizeof(cell_ptr));
     }
 
-    cell_ptr *ptr = malloc(sizeof(cell_ptr));
+    cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
     ptr->block_num = data->ctrl_block->fragmented_label_block;
     ptr->offset = data->ctrl_block->empty_label_number;
     int32_t block_number = data->ctrl_block->fragmented_label_block;
@@ -56,24 +56,30 @@ bool match_labels(linked_list *matcher_labels, datafile *data, label_cell last_l
     for (node *current_matcher_label = matcher_labels->first; current_matcher_label; current_matcher_label = current_matcher_label->next) {
         add_last(labels, current_matcher_label->value);
     }
-    if (label.name.block_num == 0) return labels->size == 0;
+    if (label.name.block_num == 0){
+        free_list(labels, false);
+        return labels->size == 0;
+    }
     do {
         cell_ptr string_ptr = label.name;
         str_block read_string = {0};
         fill_block(data, string_ptr.block_num, &read_string);
         int16_t size = 0;
         memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
-        char *label_name = malloc(size + 1);
+        char label_name [size + 1];
         bzero(label_name, strlen(label_name) + 1);
         strcpy(label_name, &read_string.data[string_ptr.offset + 2]);
         label_name[size] = '\0';
-        if (node_labels != NULL) add_last(node_labels, label_name);
         remove_element(by_value, labels, label_name, NULL);
+        if (node_labels != NULL) {
+            add_last(node_labels, label_name);
+        }
         label_block read_labels = {0};
         prev = label.prev;
         fill_block(data, prev.block_num, &read_labels);
         memcpy(&label, &read_labels.labels[prev.offset], sizeof(label_cell));
     } while (!(prev.block_num == 0 && prev.offset == 0));
+    free_list(labels, false);
     return labels->size == 0;
 }
 
@@ -129,7 +135,7 @@ long remove_labels(datafile *data, linked_list *node_cells, linked_list *changed
             fill_block(data, string_ptr.block_num, &read_string);
             int16_t size = 0;
             memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
-            char *label_name = malloc(size + 1);
+            char *label_name = my_alloc(size + 1);
             bzero(label_name, strlen(label_name) + 1);
             strcpy(label_name, &read_string.data[string_ptr.offset + 2]);
             label_name[size] = '\0';

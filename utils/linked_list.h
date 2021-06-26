@@ -32,7 +32,7 @@ bool by_key(void *value, char *key, char *second_value);
 
 linked_list *init_list();
 
-void free_list(linked_list *ptr);
+void free_list(linked_list *ptr, bool is_alloc_value);
 
 void remove_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find);
 

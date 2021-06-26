@@ -7,6 +7,8 @@
 
 #ifndef SPOLAB15_DATAFILE_H
 #define SPOLAB15_DATAFILE_H
+#include "../utils/my_alloc.h"
+
 
 typedef struct {
     FILE* file;

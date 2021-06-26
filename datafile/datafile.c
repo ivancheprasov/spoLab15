@@ -6,16 +6,16 @@
 #include "attribute.h"
 
 datafile *init_data(char *file_path) {
-    datafile *data = malloc(sizeof(datafile));
+    datafile *data = my_alloc(sizeof(datafile));
     FILE *data_file;
     if (access(file_path, F_OK) == 0) {
         data_file = fopen(file_path, "r+b");
         data->file = data_file;
-        data->ctrl_block = malloc(sizeof(control_block));
+        data->ctrl_block = my_alloc(sizeof(control_block));
         fill_block(data, 0, data->ctrl_block);
     } else {
         data_file = fopen(file_path, "wb+");
-        control_block *ctrl_block = malloc(sizeof(control_block));
+        control_block *ctrl_block = my_alloc(sizeof(control_block));
         bzero(ctrl_block, sizeof(control_block));
         ctrl_block->metadata.type = CONTROL;
         ctrl_block->empty_block = 1;
@@ -46,7 +46,7 @@ cell_ptr *create_string_cell(datafile *data, char *string) {
     fill_block(data, data->ctrl_block->fragmented_string_block, &read);
     int16_t empty_fragment_size = 0;
 
-    cell_ptr *ptr = malloc(sizeof(cell_ptr));
+    cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
 
     memcpy(&empty_fragment_size, read.data + data->ctrl_block->empty_string_offset, sizeof(empty_fragment_size));
     empty_fragment_size = (int16_t) (1020 - data->ctrl_block->empty_string_offset);
@@ -111,20 +111,24 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             if (is_node_a) {
                 if (nodes == NULL) {
                     if (!match_labels(info->labels, data, label, NULL)) {
-                        free_list(node_labels);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                     if (!match_attributes(info->props, data, attribute, NULL)) {
-                        free_list(node_props);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                 } else {
                     if (!match_labels(info->labels, data, label, node_labels)) {
-                        free_list(node_labels);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                     if (!match_attributes(info->props, data, attribute, node_props)) {
-                        free_list(node_props);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                 }
@@ -144,7 +148,7 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
                         fill_block(data, string_ptr.block_num, &read_string);
                         int16_t size = 0;
                         memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
-                        char *relation_name = malloc(size + 1);
+                        char *relation_name = my_alloc(size + 1);
                         bzero(relation_name, strlen(relation_name) + 1);
                         strcpy(relation_name, &read_string.data[string_ptr.offset + 2]);
                         relation_name[size] = '\0';
@@ -171,9 +175,10 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
                                     found = true;
                                 }
                             }
-                            free_list(node_b_list);
+                            free_list(node_b_list, true);
                             if (!found) continue;
                         }
+                        my_free(relation_name);
                         relation_block read_relations = {0};
                         prev = relation.prev;
                         fill_block(data, prev.block_num, &read_relations);
@@ -184,30 +189,34 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             } else {
                 if (nodes == NULL) {
                     if (!match_labels(info->rel_node_labels, data, label, NULL)) {
-                        free_list(node_labels);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                     if (!match_attributes(info->rel_node_props, data, attribute, NULL)) {
-                        free_list(node_props);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                 } else {
                     if (!match_labels(info->rel_node_labels, data, label, node_labels)) {
-                        free_list(node_labels);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                     if (!match_attributes(info->rel_node_props, data, attribute, node_props)) {
-                        free_list(node_props);
+                        free_list(node_labels, false);
+                        free_list(node_props, true);
                         continue;
                     }
                 }
             }
-            cell_ptr *ptr = malloc(sizeof(cell_ptr));
+            cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
             ptr->block_num = node_block_num;
             ptr->offset = offset;
             add_last(node_ptr, ptr);
             if (nodes != NULL) {
-                match_result *match = malloc(sizeof(match_result));
+                match_result *match = my_alloc(sizeof(match_result));
                 match->labels = node_labels;
                 match->props = node_props;
                 add_last(nodes, match);

@@ -8,9 +8,9 @@ int main() {
     printf("Size of %s is %lu\n", "attribute", sizeof(attribute_cell));
     printf("Size of %s is %lu\n", "relation", sizeof(relation_cell));
     printf("Size of %s is %lu\n", "node", sizeof(node_cell));
-    printf("%lu\n", LABELS_IN_BLOCK);
-    printf("%lu\n", NODES_IN_BLOCK);
-    printf("%lu\n", NODES_IN_CONTROL_BLOCK);
+    printf("Number of labels in block is %lu\n", LABELS_IN_BLOCK);
+    printf("Number of nodes in block is %lu\n", NODES_IN_BLOCK);
+    printf("Number of nodes in control block is %lu\n", NODES_IN_CONTROL_BLOCK);
     printf("Size of %s is %lu\n", "TYPE", sizeof(TYPE));
     printf("Size of %s is %lu\n", "block_metadata", sizeof(block_metadata));
     printf("Size of %s is %lu\n", "label_block", sizeof(label_block));

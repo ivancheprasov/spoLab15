@@ -1,7 +1,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stddef.h>
-#include <malloc.h>
+#include "../utils/my_alloc.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +20,7 @@ server_info *startup(uint16_t port, datafile *data) {
     address.sin_port = htons(server_info_ptr->port);
     address.sin_family = AF_INET;
     server_info_ptr->server_fd = created_socket;
-    server_info_ptr->data = malloc(sizeof(datafile));
+    server_info_ptr->data = my_alloc(sizeof(datafile));
     memcpy(server_info_ptr->data, data, sizeof(datafile));
     pthread_mutex_init(&server_info_ptr->mutex, NULL);
     int bind_result = bind(created_socket, (const struct sockaddr *) &address, sizeof(address));
@@ -94,7 +94,7 @@ _Noreturn void manage_connections(server_info *info) {
         struct sockaddr_in client_address;
         socklen_t address_len = sizeof(client_address);
         int32_t accepted_socket = accept(info->server_fd, (struct sockaddr *) &client_address, &address_len);
-        client_arguments *arg = malloc(sizeof(client_arguments));
+        client_arguments *arg = my_alloc(sizeof(client_arguments));
         arg->client_socket = accepted_socket;
         arg->info = info;
         pthread_create(&arg->thread, NULL, (void *(*)(void *)) work_with_client, arg);
@@ -135,20 +135,20 @@ char *execute_command(query_info *info, datafile *data) {
                 cell_ptr *string_cell = create_string_cell(data, label->value);
                 cell_ptr *label_cell = create_label_cell(data, string_cell, node_cell);
                 update_node_labels(data, node_cell, label_cell);
-                free(string_cell);
-                free(label_cell);
+                my_free(string_cell);
+                my_free(label_cell);
             }
             for (node *prop = info->props->first; prop; prop = prop->next) {
                 cell_ptr *key_cell = create_string_cell(data, ((property *) prop->value)->key);
                 cell_ptr *value_cell = create_string_cell(data, ((property *) prop->value)->value);
                 cell_ptr *attribute_cell = create_attribute_cell(data, key_cell, value_cell, node_cell);
                 update_node_attributes(data, node_cell, attribute_cell);
-                free(key_cell);
-                free(value_cell);
-                free(attribute_cell);
+                my_free(key_cell);
+                my_free(value_cell);
+                my_free(attribute_cell);
             }
             number++;
-            free(node_cell);
+            my_free(node_cell);
             return build_xml_create_or_delete_response("create", "node", number);
         }
     }
@@ -199,7 +199,7 @@ void close_server(server_info *info) {
 }
 
 static server_info *create_server_info(uint16_t port) {
-    server_info *server = malloc(sizeof(server_info));
+    server_info *server = my_alloc(sizeof(server_info));
     server->port = port;
     return server;
 }

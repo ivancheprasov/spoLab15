@@ -19,7 +19,7 @@ cell_ptr *create_attribute_cell(datafile *data, cell_ptr *key_cell, cell_ptr *va
         memcpy(&new_cell.prev, &((node_block *) &read_node)->nodes[node_cell->offset].last_attribute, sizeof(cell_ptr));
     }
 
-    cell_ptr *ptr = malloc(sizeof(cell_ptr));
+    cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
     ptr->block_num = data->ctrl_block->fragmented_attribute_block;
     ptr->offset = data->ctrl_block->empty_attribute_number;
     int32_t block_number = data->ctrl_block->fragmented_attribute_block;
@@ -53,13 +53,16 @@ bool match_attributes(linked_list *matcher_attributes, datafile *data, attribute
     cell_ptr prev;
     linked_list *attributes = init_list();
     for (node *current_matcher_attribute = matcher_attributes->first; current_matcher_attribute; current_matcher_attribute = current_matcher_attribute->next) {
-        property *prop = malloc(sizeof(property));
+        property *prop = my_alloc(sizeof(property));
         bzero(prop, sizeof(property));
         strcpy(prop->key, ((property *) current_matcher_attribute->value)->key);
         strcpy(prop->value, ((property *) current_matcher_attribute->value)->value);
         add_last(attributes, prop);
     }
-    if (attribute.key.block_num == 0 || attribute.value.block_num == 0) return attributes->size == 0;
+    if (attribute.key.block_num == 0 || attribute.value.block_num == 0) {
+        free_list(attributes, true);
+        return attributes->size == 0;
+    }
     do {
         cell_ptr key_ptr = attribute.key;
         cell_ptr value_ptr = attribute.value;
@@ -71,8 +74,8 @@ bool match_attributes(linked_list *matcher_attributes, datafile *data, attribute
         int16_t value_size = 0;
         memcpy(&key_size, &read_key.data[key_ptr.offset], sizeof(int16_t));
         memcpy(&value_size, &read_value.data[value_ptr.offset], sizeof(int16_t));
-        char *attr_key = malloc(key_size + 1);
-        char *attr_value = malloc(value_size + 1);
+        char attr_key [key_size + 1];
+        char attr_value [value_size + 1];
         bzero(attr_key, strlen(attr_key) + 1);
         bzero(attr_value, strlen(attr_value) + 1);
         strcpy(attr_key, &read_key.data[key_ptr.offset + 2]);
@@ -80,7 +83,7 @@ bool match_attributes(linked_list *matcher_attributes, datafile *data, attribute
         attr_key[key_size] = '\0';
         attr_value[value_size] = '\0';
         if (node_attributes != NULL) {
-            property *prop = malloc(sizeof(property));
+            property *prop = my_alloc(sizeof(property));
             bzero(prop, sizeof(property));
             strcpy(prop->key, attr_key);
             strcpy(prop->value, attr_value);
@@ -92,6 +95,7 @@ bool match_attributes(linked_list *matcher_attributes, datafile *data, attribute
         fill_block(data, prev.block_num, &read_attributes);
         memcpy(&attribute, &read_attributes.attributes[prev.offset], sizeof(attribute_cell));
     } while (!(prev.block_num == 0 && prev.offset == 0));
+    free_list(attributes, true);
     return attributes->size == 0;
 }
 
@@ -134,24 +138,24 @@ cell_ptr *find_node_attribute(datafile *data, cell_ptr *node_ptr, char *matcher_
     if (attribute_ptr.block_num == 0) return NULL;
     int32_t block_number = attribute_ptr.block_num;
     int16_t offset = attribute_ptr.offset;
-    cell_ptr *next = malloc(sizeof(cell_ptr));
+    cell_ptr *next = my_alloc(sizeof(cell_ptr));
     memcpy(next, node_ptr, sizeof(cell_ptr));
     do {
         attribute_block read_attribute;
         fill_block(data, block_number, &read_attribute);
-        attribute_cell *attribute = malloc(sizeof(attribute_cell));
+        attribute_cell *attribute = my_alloc(sizeof(attribute_cell));
         memcpy(attribute, &read_attribute.attributes[offset], sizeof(attribute_cell));
         cell_ptr key_ptr = attribute->key;
         str_block read_string = {0};
         fill_block(data, key_ptr.block_num, &read_string);
         int16_t size = 0;
         memcpy(&size, &read_string.data[key_ptr.offset], sizeof(int16_t));
-        char *key = malloc(size + 1);
+        char *key = my_alloc(size + 1);
         bzero(key, strlen(key) + 1);
         strcpy(key, &read_string.data[key_ptr.offset + 2]);
         key[size] = '\0';
         if (strcmp(key, matcher_key) == 0) {
-            cell_ptr *ptr = malloc(sizeof(cell_ptr));
+            cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
             memcpy(&ptr->block_num, &block_number, sizeof(int32_t));
             memcpy(&ptr->offset, &offset, sizeof(int16_t));
             return ptr;
@@ -183,7 +187,7 @@ long remove_attributes(datafile *data, linked_list *node_cells, linked_list *cha
         linked_list *attributes = init_list();
         if (changed_props != NULL) {
             for (query_attr = changed_props->first; query_attr; query_attr = query_attr->next) {
-                property *prop = malloc(sizeof(property));
+                property *prop = my_alloc(sizeof(property));
                 bzero(prop, sizeof(property));
                 strcpy(prop->key, ((property *) query_attr->value)->key);
                 strcpy(prop->value, ((property *) query_attr->value)->value);
@@ -209,7 +213,7 @@ long remove_attributes(datafile *data, linked_list *node_cells, linked_list *cha
             fill_block(data, key_ptr.block_num, &read_key);
             int16_t size = 0;
             memcpy(&size, &read_key.data[key_ptr.offset], sizeof(int16_t));
-            char *key = malloc(size + 1);
+            char *key = my_alloc(size + 1);
             bzero(key, strlen(key) + 1);
             strcpy(key, &read_key.data[key_ptr.offset + 2]);
             key[size] = '\0';

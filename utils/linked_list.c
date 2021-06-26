@@ -1,7 +1,8 @@
 #include <stddef.h>
-#include <malloc.h>
+#include "my_alloc.h"
 #include <string.h>
 #include "linked_list.h"
+#include "my_alloc.h"
 
 void *get_element(linked_list *ptr, uint32_t index) {
     if (index >= ptr->size) {
@@ -15,7 +16,7 @@ void *get_element(linked_list *ptr, uint32_t index) {
 }
 
 uint32_t add_first(linked_list *ptr, void *element) {
-    node *created = malloc(sizeof(node));
+    node *created = my_alloc(sizeof(node));
     created->next = ptr->first;
     created->value = element;
     ptr->first->prev = created;
@@ -24,7 +25,7 @@ uint32_t add_first(linked_list *ptr, void *element) {
 }
 
 uint32_t add_last(linked_list *ptr, void *element) {
-    node *created = malloc(sizeof(node));
+    node *created = my_alloc(sizeof(node));
     bzero(created, sizeof(node));
     created->prev = ptr->last;
     created->value = element;
@@ -39,23 +40,24 @@ uint32_t add_last(linked_list *ptr, void *element) {
 }
 
 linked_list *init_list() {
-    linked_list *created = malloc(sizeof(linked_list));
+    linked_list *created = my_alloc(sizeof(linked_list));
     created->first = NULL;
     created->last = NULL;
     created->size = 0;
     return created;
 }
 
-void free_list(linked_list *ptr) {
+void free_list(linked_list *ptr, bool is_alloc_value) {
     node *current = ptr->first;
     if(ptr->size != 0) {
         for (uint32_t i = 1; i < ptr->size; ++i) {
             current = current->next;
-            free(current->prev);
+            my_free(current->prev);
         }
-        free(current);
+        if(is_alloc_value) my_free(current->value);
+        my_free(current);
     }
-    free(ptr);
+    my_free(ptr);
 }
 
 void remove_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *first_to_find, char *second_to_find) {
@@ -77,7 +79,7 @@ void remove_element(bool (*by)(void *, char *, char *), linked_list *ptr, char *
             current->next->prev = current->prev;
         }
         ptr->size--;
-        free(current);
+        my_free(current);
     }
 }
 

@@ -19,7 +19,7 @@ cell_ptr *create_relation_cell(datafile *data, cell_ptr *string_cell, cell_ptr *
         memcpy(&new_cell.prev, &((node_block *) &read_node)->nodes[first_node_cell->offset].last_relation, sizeof(cell_ptr));
     }
 
-    cell_ptr *ptr = malloc(sizeof(cell_ptr));
+    cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
     int32_t block_number = data->ctrl_block->fragmented_relation_block;
     ptr->block_num = block_number;
     ptr->offset = data->ctrl_block->empty_relation_number;
@@ -80,7 +80,7 @@ long delete_relations(datafile *data, query_info* info, linked_list *node_cells,
             fill_block(data, string_ptr.block_num, &read_string);
             int16_t size = 0;
             memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
-            char *relation_name = malloc(size + 1);
+            char *relation_name = my_alloc(size + 1);
             bzero(relation_name, strlen(relation_name) + 1);
             strcpy(relation_name, &read_string.data[string_ptr.offset + 2]);
             relation_name[size] = '\0';
@@ -134,7 +134,7 @@ long delete_relations(datafile *data, query_info* info, linked_list *node_cells,
                         number++;
                     }
                 }
-                free_list(node_b_list);
+                free_list(node_b_list, true);
             }
             memcpy(&prev, &current, sizeof(cell_ptr));
             block_number = old_cell.prev.block_num;

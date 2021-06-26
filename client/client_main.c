@@ -1,6 +1,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "client.h"
+#include "../utils/my_alloc.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -24,7 +25,7 @@ int main(int argc, char **argv) {
     uint8_t errors;
     puts("Enter CYPHER query or type \"exit\" to leave");
     long count = server_fd;
-    char *response = malloc(BUFSIZ);
+    char *response = my_alloc(BUFSIZ);
     char response_string [RESPONSE_BUFFER_SIZE] = {0};
     while (count > 0) {
         getline(&input, &length, stdin);
@@ -46,7 +47,6 @@ int main(int argc, char **argv) {
         }
         query_info *info = get_query_info(result);
         if(info == NULL) continue;
-//        query_info *info = parse_data(input, length);
         char *request = build_client_xml_request(info);
         puts(request);
         send_message(server_fd, request);

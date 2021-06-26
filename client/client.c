@@ -5,23 +5,24 @@
 #include <string.h>
 #include <cypher-parser.h>
 #include "client.h"
+#include "../utils/my_alloc.h"
 
 void send_message(int32_t server_fd, char* request) {
-    char *request_header = malloc(BUFSIZ);
+    char *request_header = my_alloc(BUFSIZ);
     bzero(request_header, BUFSIZ);
     sprintf(request_header, "%lu", strlen(request));
     if (send(server_fd, request_header, BUFSIZ, 0) < 0) handle_sending_error();
-    free(request_header);
+    my_free(request_header);
     long remain_data = (long) strlen(request);
     int offset = 0;
     do {
         int packet_size = remain_data > BUFSIZ ? BUFSIZ : (int) remain_data;
-        char *data = malloc(packet_size);
+        char *data = my_alloc(packet_size);
         memcpy(data, request + offset, packet_size);
         offset += packet_size;
 
         if (send(server_fd, data, packet_size, 0) < 0) handle_sending_error();
-        free(data);
+        my_free(data);
 
         remain_data -= packet_size;
         printf("⬆ Sent %d bytes of request... Remaining: %lu\n\n", packet_size, remain_data);
@@ -30,8 +31,8 @@ void send_message(int32_t server_fd, char* request) {
 }
 
 char* receive_message(int32_t server_fd, long content_length) {
-    char *response = malloc(BUFSIZ);
-    char *response_xml = malloc(content_length + 1);
+    char *response = my_alloc(BUFSIZ);
+    char *response_xml = my_alloc(content_length + 1);
     bzero(response_xml, content_length + 1);
     long response_offset = 0;
     long remain_data = content_length;
@@ -107,7 +108,7 @@ static void set_labels_and_props(const cypher_astnode_t *node, linked_list *labe
         for (int i = 0; i < cypher_ast_map_nentries(props); ++i) {
             const cypher_astnode_t *key = cypher_ast_map_get_key(props, i);
             const cypher_astnode_t *value = cypher_ast_map_get_value(props, i);
-            property *prop = malloc(sizeof(property));
+            property *prop = my_alloc(sizeof(property));
             memset(prop, 0, PROPERTY_KEY_SIZE + PROPERTY_VALUE_SIZE);
             if (
                     strlen(cypher_ast_prop_name_get_value(key)) > PROPERTY_KEY_SIZE ||
@@ -138,7 +139,7 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
             const cypher_astnode_t *set_prop = cypher_ast_set_property_get_property(item);
             const cypher_astnode_t *prop_name = cypher_ast_property_operator_get_prop_name(set_prop);
             const cypher_astnode_t *expression = cypher_ast_set_property_get_expression(item);
-            property *prop = malloc(sizeof(property));
+            property *prop = my_alloc(sizeof(property));
             if (
                     strlen(cypher_ast_prop_name_get_value(prop_name)) >
                     PROPERTY_KEY_SIZE ||
@@ -164,7 +165,7 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
         if (cypher_astnode_type(item) == CYPHER_AST_REMOVE_PROPERTY) {
             const cypher_astnode_t *remove_prop = cypher_ast_remove_property_get_property(item);
             const cypher_astnode_t *prop_name = cypher_ast_property_operator_get_prop_name(remove_prop);
-            property *prop = malloc(sizeof(property));
+            property *prop = my_alloc(sizeof(property));
             if (
                     strlen(cypher_ast_prop_name_get_value(prop_name)) >
                     PROPERTY_KEY_SIZE) {
@@ -177,40 +178,6 @@ static void set_changed_labels_and_props(const cypher_astnode_t *clause, query_i
             }
         }
     }
-}
-
-query_info *parse_data(char *input, size_t length) {
-    query_info *info = init_query_info();
-    strcpy(info->command_type, "create");
-    char *label = malloc(10);
-    char key [50];
-    char symbol = input[6];
-    int i =0;
-    while(symbol != '"') {
-        memcpy(label+i, &symbol, 1);
-        i++;
-        symbol = input[6+i];
-    }
-    add_last(info->labels, label);
-    symbol = input[i+20];
-    int j;
-    while(symbol != 'R') {
-        bzero(&key, 50);
-        j = 0;
-        while(symbol != ',') {
-            memcpy(key+j, &symbol, 1);
-            i++;
-            j++;
-            symbol = input[20+i];
-        }
-        i+= 2;
-        symbol = input[20+i];
-        property *prop = malloc(sizeof (property));
-        strcpy(prop->key, key);
-        strcpy(prop->value, key);
-        add_last(info->props, prop);
-    }
-    return info;
 }
 
 static void handle_sending_error() {

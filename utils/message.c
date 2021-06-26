@@ -1,5 +1,6 @@
 #include <string.h>
 #include "message.h"
+#include "my_alloc.h"
 #include <libxml/xmlschemastypes.h>
 
 char *build_client_xml_request(query_info *info) {
@@ -111,7 +112,7 @@ void parse_xml_response(char *xml_request, char *response_string) {
 }
 
 query_info *init_query_info() {
-    query_info *info = malloc(sizeof(query_info));
+    query_info *info = my_alloc(sizeof(query_info));
     info->labels = init_list();
     info->props = init_list();
     info->rel_node_labels = init_list();
@@ -123,20 +124,20 @@ query_info *init_query_info() {
 }
 
 match_result *init_match_result() {
-    match_result *match = malloc(sizeof(match_result));
+    match_result *match = my_alloc(sizeof(match_result));
     match->labels = init_list();
     match->props = init_list();
     return match;
 }
 
 void free_query_info(query_info *info) {
-    free_list(info->labels);
-    free_list(info->props);
-    free_list(info->rel_node_labels);
-    free_list(info->rel_node_props);
-    free_list(info->changed_labels);
-    free_list(info->changed_props);
-    free(info);
+    free_list(info->labels, false);
+    free_list(info->props, true);
+    free_list(info->rel_node_labels, false);
+    free_list(info->rel_node_props, true);
+    free_list(info->changed_labels, false);
+    free_list(info->changed_props, true);
+    my_free(info);
 }
 
 query_info *parse_client_xml_request(char *xml_request) {
@@ -261,7 +262,7 @@ static void *parse_xml_node_labels(xmlNode *node_labels, linked_list *labels) {
 
 static void *parse_xml_node_props(xmlNode *node_props, linked_list *props) {
     for (xmlNode *prop = node_props->children; prop; prop = prop->next) {
-        property *current_prop = malloc(sizeof(property));
+        property *current_prop = my_alloc(sizeof(property));
         xmlChar *key = xmlGetProp(prop, BAD_CAST "key");
         xmlChar *value = xmlGetProp(prop, BAD_CAST "value");
         if (key == NULL || value == NULL) return NULL;

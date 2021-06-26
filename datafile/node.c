@@ -14,7 +14,7 @@ cell_ptr *create_node_cell(datafile *data) {
     }
     node_cell new_cell = {0};
     new_cell.is_empty = 1;
-    cell_ptr *ptr = malloc(sizeof(cell_ptr));
+    cell_ptr *ptr = my_alloc(sizeof(cell_ptr));
 
     ptr->block_num = data->ctrl_block->fragmented_node_block;
     ptr->offset = data->ctrl_block->empty_node_number;
