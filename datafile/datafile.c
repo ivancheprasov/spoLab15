@@ -114,6 +114,7 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
                     matching = true;
                 }
                 if (info->has_relation) {
+                    matching = false;
                     relation_block read_relation = {0};
                     fill_block(data, node.last_relation.block_num, &read_relation);
                     relation_cell relation = {0};
@@ -170,8 +171,7 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
                         memcpy(&relation, &read_relations.relations[prev.offset], sizeof(relation_cell));
                     } while (!(prev.block_num == 0 && prev.offset == 0));
                 } else {
-                    add_new_match_result(node_ptr, nodes, node_labels, node_props, node_block_num, offset);
-                    matching = true;
+                    if(matching) add_new_match_result(node_ptr, nodes, node_labels, node_props, node_block_num, offset);
                 }
             } else {
                 if (match_labels(info->rel_node_labels, data, label, nodes == NULL ? NULL : node_labels) &&

@@ -105,15 +105,16 @@ char *execute_command(query_info *info, datafile *data) {
     char *command = info->command_type;
     uint64_t number = 0;
     if (strcmp(command, "match") == 0) {
-        //возврат всех совпадений (всех аттрибутов и меток) без списка отношений, подсчёт кол-ва найденных узлов
+        //show nodes with all labels and attributes with indexes
         linked_list *match_results = init_list();
         linked_list *node_ptr = init_list();
         number = match(info, data, node_ptr, match_results, true);
+        free_list(node_ptr, true);
         return build_xml_match_response(match_results, number);
     }
     if (strcmp(command, "create") == 0) {
         if (info->has_relation) {
-            //сравнение с заданным шаблоном, создание указанной связи, подсчёт кол-ва созданных связей
+            //matcher on nodes and relation creation
             linked_list *node_a_ptr = init_list();
             linked_list *node_b_ptr = init_list();
             info->has_relation = false;
@@ -129,7 +130,7 @@ char *execute_command(query_info *info, datafile *data) {
             }
             return build_xml_create_or_delete_response("create", "relation", number * number2);
         } else {
-            //создание узла с заданными параметрами
+            //node creation with labels and attributes
             cell_ptr *node_cell = create_node_cell(data);
             for (node *label = info->labels->first; label; label = label->next) {
                 cell_ptr *string_cell = create_string_cell(data, label->value);
@@ -156,17 +157,17 @@ char *execute_command(query_info *info, datafile *data) {
         linked_list *node_ptr = init_list();
         number = match(info, data, node_ptr, NULL, true);
         if (info->has_relation) {
-            //сравнение с заданным шаблоном, удаление указанной связи, подсчёт кол-ва удалённых связей
+            //relation removal of the matching nodes
             delete_relations(data, info, node_ptr, info->rel_name);
             return build_xml_create_or_delete_response("delete", "relation", number);
         } else {
-            //сравнение с заданным шаблоном, удаление указанных узлов, подсчёт кол-ва удалённых узлов
+            //removal of the matching nodes
             delete_nodes(data, node_ptr, info);
             return build_xml_create_or_delete_response("delete", "node", number);
         }
     }
     if (strcmp(command, "set") == 0) {
-        //сравнение с заданным шаблоном, изменение changed, подсчёт кол-ва изменений
+        //attributes and labels modification of the matching nodes
         linked_list *node_ptr = init_list();
         number = match(info, data, node_ptr, NULL, true);
         if (info->changed_labels->size > 0) {
@@ -179,7 +180,7 @@ char *execute_command(query_info *info, datafile *data) {
         return NULL;
     }
     if (strcmp(command, "remove") == 0) {
-        //сравнение с заданным шаблоном, удаление changed, подсчёт кол-ва изменений
+        //attributes and labels modification of the matching nodes
         linked_list *node_ptr = init_list();
         match(info, data, node_ptr, NULL, true);
         if (info->changed_labels->size > 0) {

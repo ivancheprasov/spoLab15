@@ -30,7 +30,7 @@ char *build_client_xml_request(query_info *info) {
         build_xml_node_props(changed_props, info->changed_props);
     }
     xmlChar *request_string;
-    xmlDocDumpMemory(doc, &request_string, NULL);
+    xmlDocDumpMemoryEnc(doc, &request_string, NULL, "UTF-8");
     xmlFreeDoc(doc);
     return (char *) request_string;
 }
@@ -203,8 +203,9 @@ char *build_xml_match_response(linked_list *match_results, uint64_t number) {
         build_xml_node_props(props, ((match_result *) matching_node->value)->props);
     }
     xmlChar *response_string;
-    xmlDocDumpMemory(doc, &response_string, NULL);
+    xmlDocDumpMemoryEnc(doc, &response_string, NULL, "UTF-8");
     xmlFreeDoc(doc);
+    free_match_result(match_results);
     return (char *) response_string;
 }
 
@@ -218,7 +219,7 @@ char *build_xml_create_or_delete_response(char *command_type, char *object_type,
     xmlNewProp(response, BAD_CAST "type", BAD_CAST object_type);
     xmlNewProp(response, BAD_CAST "number", BAD_CAST buffer);
     xmlChar *response_string;
-    xmlDocDumpMemory(doc, &response_string, NULL);
+    xmlDocDumpMemoryEnc(doc, &response_string, NULL, "UTF-8");
     xmlFreeDoc(doc);
     return (char *) response_string;
 }
@@ -238,7 +239,7 @@ char *build_xml_set_or_remove_response(char *command_type, char *object_type, li
     }
     xmlNewProp(response, BAD_CAST "number", BAD_CAST buffer);
     xmlChar *response_string;
-    xmlDocDumpMemory(doc, &response_string, NULL);
+    xmlDocDumpMemoryEnc(doc, &response_string, NULL, "UTF-8");
     xmlFreeDoc(doc);
     return (char *) response_string;
 }
@@ -249,6 +250,15 @@ bool by_property_values(void *value, char *to_find_key, char* to_find_value) {
 
 bool by_key(void *value, char *key, char *second_value) {
     return strcmp(((property *)value)->key, key) == 0;
+}
+
+void free_match_result(linked_list *match_results) {
+    for (node *current = match_results->first; current; current=current->next) {
+        free_list(((match_result *)current->value)->labels, false);
+        free_list(((match_result *)current->value)->props, true);
+        my_free(current->value);
+        my_free(current);
+    }
 }
 
 static void *parse_xml_node_labels(xmlNode *node_labels, linked_list *labels) {

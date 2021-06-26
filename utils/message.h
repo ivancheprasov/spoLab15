@@ -50,6 +50,8 @@ char *build_xml_create_or_delete_response(char *command_type, char *object_type,
 
 char *build_xml_set_or_remove_response(char *command_type, char *object_type, linked_list *changed, uint64_t number);
 
+void free_match_result(linked_list *match_results);
+
 bool by_property_values(void *value, char *to_find_key, char* to_find_value);
 
 static void *parse_xml_node_labels(xmlNode *node_labels, linked_list *labels);
