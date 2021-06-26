@@ -50,8 +50,9 @@ linked_list *init_list() {
 void free_list(linked_list *ptr, bool is_alloc_value) {
     node *current = ptr->first;
     if(ptr->size != 0) {
-        for (uint32_t i = 1; i < ptr->size; ++i) {
+        for (uint64_t i = 1; i < ptr->size; ++i) {
             current = current->next;
+            if(is_alloc_value) my_free(current->prev->value);
             my_free(current->prev);
         }
         if(is_alloc_value) my_free(current->value);

@@ -7,10 +7,11 @@
 
 #ifndef SPOLAB15_DATAFILE_H
 #define SPOLAB15_DATAFILE_H
+
 #include "../utils/my_alloc.h"
 
 typedef struct {
-    FILE* file;
+    FILE *file;
     control_block *ctrl_block;
 } datafile;
 
@@ -27,6 +28,10 @@ void update_control_block(datafile *data);
 void update_data_block(datafile *data, int32_t block_number, void *block);
 
 void allocate_new_block(datafile *data, TYPE type);
+
+static void add_new_match_result(
+        linked_list *node_ptr, linked_list *nodes, linked_list *node_labels, linked_list *node_props,
+        int32_t node_block_num, int16_t offset);
 
 #endif //SPOLAB15_DATAFILE_H
 
