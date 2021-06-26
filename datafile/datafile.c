@@ -109,28 +109,9 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             linked_list *node_labels = init_list();
             linked_list *node_props = init_list();
             if (is_node_a) {
-                if (nodes == NULL) {
-                    if (!match_labels(info->labels, data, label, NULL)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                    if (!match_attributes(info->props, data, attribute, NULL)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                } else {
-                    if (!match_labels(info->labels, data, label, node_labels)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                    if (!match_attributes(info->props, data, attribute, node_props)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
+                if (match_labels(info->labels, data, label, nodes == NULL ? NULL : node_labels) &&
+                    match_attributes(info->props, data, attribute, nodes == NULL ? NULL : node_props)) {
+                    matching = true;
                 }
                 if (info->has_relation) {
                     relation_block read_relation = {0};
@@ -193,28 +174,8 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
                     matching = true;
                 }
             } else {
-                if (nodes == NULL) {
-                    if (!match_labels(info->rel_node_labels, data, label, NULL)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                    if (!match_attributes(info->rel_node_props, data, attribute, NULL)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                } else {
-                    if (!match_labels(info->rel_node_labels, data, label, node_labels)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
-                    if (!match_attributes(info->rel_node_props, data, attribute, node_props)) {
-                        free_list(node_labels, false);
-                        free_list(node_props, true);
-                        continue;
-                    }
+                if (match_labels(info->rel_node_labels, data, label, nodes == NULL ? NULL : node_labels) &&
+                    match_attributes(info->rel_node_props, data, attribute, nodes == NULL ? NULL : node_props)) {
                     add_new_match_result(node_ptr, NULL, node_labels, node_props, node_block_num, offset);
                     matching = true;
                 }
