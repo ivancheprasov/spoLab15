@@ -9,7 +9,6 @@
 #define SPOLAB15_DATAFILE_H
 #include "../utils/my_alloc.h"
 
-
 typedef struct {
     FILE* file;
     control_block *ctrl_block;

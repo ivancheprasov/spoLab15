@@ -215,7 +215,10 @@ long match(query_info *info, datafile *data, linked_list *node_ptr, linked_list 
             ptr->block_num = node_block_num;
             ptr->offset = offset;
             add_last(node_ptr, ptr);
-            if (nodes != NULL) {
+            if (nodes == NULL) {
+                free_list(node_labels, false);
+                free_list(node_props, true);
+            } else {
                 match_result *match = my_alloc(sizeof(match_result));
                 match->labels = node_labels;
                 match->props = node_props;

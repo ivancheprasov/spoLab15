@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "cells.h"
-#include "blocks.h"
+#include "../datafile/cells.h"
+#include "../datafile/blocks.h"
 
 int main() {
     printf("Size of %s is %lu\n", "str_ptr", sizeof(cell_ptr));

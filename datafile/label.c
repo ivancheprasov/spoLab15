@@ -66,7 +66,7 @@ bool match_labels(linked_list *matcher_labels, datafile *data, label_cell last_l
         fill_block(data, string_ptr.block_num, &read_string);
         int16_t size = 0;
         memcpy(&size, &read_string.data[string_ptr.offset], sizeof(int16_t));
-        char label_name [size + 1];
+        char *label_name =  malloc(size + 1);
         bzero(label_name, strlen(label_name) + 1);
         strcpy(label_name, &read_string.data[string_ptr.offset + 2]);
         label_name[size] = '\0';
